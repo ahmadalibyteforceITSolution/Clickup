@@ -94,23 +94,29 @@
           </select>
         </div>
 
-        <!-- Job Title & Department -->
+        <!-- Job Title & Department Dropdown -->
         <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Department *</label>
+            <select
+              v-model="profileForm.department"
+              @change="onDepartmentChange"
+              class="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] focus:border-purple-500 rounded-xl text-slate-900 dark:text-white focus:outline-none font-semibold"
+            >
+              <option value="SMM">📱 SMM (Social Media Marketing)</option>
+              <option value="GRAPHICS DESIGNER">🎨 GRAPHICS DESIGNER</option>
+              <option value="SEO">🔍 SEO</option>
+              <option value="WEBSITE DEVELOPER">💻 WEBSITE DEVELOPER</option>
+              <option value="General">🏢 General / Management</option>
+            </select>
+          </div>
+
           <div>
             <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Job Title</label>
             <input
               v-model="profileForm.job_title"
               type="text"
-              placeholder="e.g. Lead Designer"
-              class="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] focus:border-purple-500 rounded-xl text-slate-900 dark:text-white focus:outline-none"
-            />
-          </div>
-          <div>
-            <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Department</label>
-            <input
-              v-model="profileForm.department"
-              type="text"
-              placeholder="Engineering"
+              placeholder="e.g. Lead SMM Specialist"
               class="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] focus:border-purple-500 rounded-xl text-slate-900 dark:text-white focus:outline-none"
             />
           </div>
@@ -206,6 +212,14 @@ watch(() => props.isOpen, (open) => {
     avatarFile.value = null;
   }
 });
+
+function onDepartmentChange() {
+  const dept = profileForm.department;
+  if (dept === 'SMM') profileForm.job_title = 'SMM Specialist';
+  else if (dept === 'GRAPHICS DESIGNER') profileForm.job_title = 'Graphic Designer';
+  else if (dept === 'SEO') profileForm.job_title = 'SEO Specialist';
+  else if (dept === 'WEBSITE DEVELOPER') profileForm.job_title = 'Web Developer';
+}
 
 function triggerFileInput() {
   fileInputRef.value?.click();
