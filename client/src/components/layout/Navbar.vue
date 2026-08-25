@@ -4,7 +4,7 @@
     <div class="flex items-center space-x-2 md:space-x-3">
       <!-- Mobile Hamburger Toggle -->
       <button
-        @click="taskStore.sidebarMobileOpen = !taskStore.sidebarMobileOpen"
+        @click="taskStore.toggleMobileSidebar"
         class="md:hidden p-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#292B2F] transition-colors"
         title="Toggle Navigation Menu"
       >
@@ -19,7 +19,7 @@
           v-model="taskStore.searchQuery"
           @input="taskStore.fetchTasks()"
           type="text"
-          placeholder="Search tasks..."
+          placeholder="Search my tasks..."
           class="w-full pl-9 pr-7 py-1.5 bg-slate-100 dark:bg-[#18191B] border border-transparent focus:border-purple-500 rounded-lg text-xs md:text-sm text-slate-800 dark:text-slate-200 focus:outline-none transition-all placeholder:text-slate-400"
         />
         <button
@@ -48,8 +48,9 @@
 
     <!-- Right Section: Actions & User Persona Switcher -->
     <div class="flex items-center space-x-1.5 sm:space-x-2.5">
-      <!-- Create Task Button (Super Admin / Manager / Team) -->
+      <!-- Create Task Button (Only Super Admin & Manager can create new tasks) -->
       <button
+        v-if="authStore.isSuperAdmin || authStore.isManager"
         @click="taskStore.createTaskModalOpen = true"
         class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-medium text-xs md:text-sm px-2.5 sm:px-3.5 py-1.5 rounded-lg flex items-center space-x-1 shadow-sm shadow-purple-500/20 transition-all active:scale-95"
       >
@@ -193,8 +194,9 @@
               <span>Register New Account</span>
             </button>
 
-            <!-- Settings & SMTP -->
+            <!-- Settings & SMTP (Admin/Manager only) -->
             <button
+              v-if="authStore.isSuperAdmin || authStore.isManager"
               @click="taskStore.settingsModalOpen = true; userMenuOpen = false"
               class="w-full text-left px-3 py-2 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#292B2F] rounded-xl flex items-center space-x-2 transition-colors"
             >

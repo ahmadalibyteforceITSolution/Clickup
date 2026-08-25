@@ -80,7 +80,9 @@
         <div>
           <div v-if="!taskStore.sidebarCollapsed" class="px-2 mb-2 flex items-center justify-between">
             <span class="text-[11px] font-extrabold tracking-wider text-slate-400 uppercase">Spaces</span>
+            <!-- Create Space Button (Only for Super Admin & Manager) -->
             <button
+              v-if="authStore.isSuperAdmin || authStore.isManager"
               @click="openCreateSpaceModal"
               class="text-slate-400 hover:text-purple-400 p-1 rounded-lg hover:bg-slate-800/60 transition-colors"
               title="Create Space"
@@ -103,7 +105,7 @@
           >
             <div class="flex items-center space-x-2.5">
               <LayoutGrid class="w-4 h-4 text-purple-400 shrink-0" />
-              <span v-if="!taskStore.sidebarCollapsed">All Spaces</span>
+              <span v-if="!taskStore.sidebarCollapsed">{{ authStore.isEmployee ? 'My Spaces' : 'All Spaces' }}</span>
             </div>
             <span v-if="!taskStore.sidebarCollapsed" class="text-[10px] bg-slate-800/80 text-slate-300 px-2 py-0.5 rounded-full font-bold">
               {{ taskStore.tasks?.length || 0 }}
@@ -136,7 +138,7 @@
                   <span v-if="!taskStore.sidebarCollapsed" class="truncate">{{ space.name }}</span>
                 </div>
 
-                <div v-if="!taskStore.sidebarCollapsed" class="flex items-center space-x-1 shrink-0">
+                <div v-if="!taskStore.sidebarCollapsed && (authStore.isSuperAdmin || authStore.isManager)" class="flex items-center space-x-1 shrink-0">
                   <button
                     @click.stop="openCreateListModal(space._id || space.id, space.name)"
                     class="opacity-0 group-hover:opacity-100 hover:text-purple-400 p-1 rounded hover:bg-slate-700/50"
@@ -147,7 +149,7 @@
                 </div>
               </div>
 
-              <!-- Nested Lists (When sidebar is open) -->
+              <!-- Nested Lists -->
               <div
                 v-if="!taskStore.sidebarCollapsed && space.lists && space.lists.length > 0"
                 class="pl-5 pr-1 py-1 space-y-1"
@@ -174,8 +176,8 @@
               </div>
             </div>
 
-            <!-- Empty Spaces State -->
-            <div v-if="!taskStore.spaces || taskStore.spaces.length === 0" class="p-1 text-center">
+            <!-- Empty Spaces State (Only Admin can create space) -->
+            <div v-if="(!taskStore.spaces || taskStore.spaces.length === 0) && (authStore.isSuperAdmin || authStore.isManager)" class="p-1 text-center">
               <button
                 @click="openCreateSpaceModal"
                 class="w-full py-2.5 px-3 border-2 border-dashed border-slate-700/80 hover:border-purple-500 rounded-xl text-xs font-bold text-purple-400 hover:text-purple-300 hover:bg-purple-950/20 transition-all flex items-center justify-center space-x-1.5"
@@ -187,8 +189,8 @@
           </div>
         </div>
 
-        <!-- Team Members Section -->
-        <div v-if="authStore.users && authStore.users.length > 0">
+        <!-- Team Members Section (Super Admin / Manager Only) -->
+        <div v-if="(authStore.isSuperAdmin || authStore.isManager) && authStore.users && authStore.users.length > 0">
           <div v-if="!taskStore.sidebarCollapsed" class="px-2 mb-2 flex items-center justify-between">
             <span class="text-[11px] font-extrabold tracking-wider text-slate-400 uppercase">Team Members</span>
             <span class="text-[10px] text-slate-500 font-bold">{{ authStore.users.length }}</span>
@@ -237,7 +239,7 @@
           <UserAvatar :name="authStore.currentUser?.name" :avatar="authStore.currentUser?.avatar" size="md" />
           <div v-if="!taskStore.sidebarCollapsed" class="min-w-0 flex-1">
             <p class="text-xs font-bold text-white truncate leading-tight">{{ authStore.currentUser?.name }}</p>
-            <p class="text-[10px] text-slate-400 truncate">{{ authStore.currentUser?.email }}</p>
+            <p class="text-[10px] text-purple-400 font-semibold truncate uppercase">{{ authStore.roleLabel }}</p>
           </div>
         </div>
         <button

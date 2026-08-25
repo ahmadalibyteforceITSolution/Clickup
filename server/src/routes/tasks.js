@@ -39,7 +39,7 @@ async function getPopulatedTask(id) {
 
 // Get tasks with Role-Based Separation:
 // - Super Admin & Manager: See all company tasks across all spaces
-// - Employee: Only sees tasks assigned to them (or created by them)
+// - Employee: ONLY sees tasks assigned to them
 router.get('/', async (req, res) => {
   try {
     const { 
@@ -49,28 +49,25 @@ router.get('/', async (req, res) => {
     
     const filter = {};
 
-    // Role-based visibility enforcement
+    // Strict role-based isolation: Employees only see tasks assigned to them
     if (user_role === 'employee' && user_id) {
-      filter.$or = [
-        { assignees: user_id },
-        { creator: user_id }
-      ];
+      filter.assignees = user_id;
     }
 
     if (list_id) filter.listId = list_id;
     if (space_id) filter.spaceId = space_id;
     if (status) filter.status = status;
     if (priority) filter.priority = priority;
-    if (assignee_id) filter.assignees = assignee_id;
+    if (assignee_id && user_role !== 'employee') filter.assignees = assignee_id;
 
     if (search) {
       const searchRegex = { $regex: search, $options: 'i' };
-      if (filter.$or) {
+      if (filter.assignees) {
         filter.$and = [
-          { $or: filter.$or },
+          { assignees: filter.assignees },
           { $or: [{ title: searchRegex }, { description: searchRegex }] }
         ];
-        delete filter.$or;
+        delete filter.assignees;
       } else {
         filter.$or = [
           { title: searchRegex },
@@ -140,7 +137,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Create task
+// Create task (Only Super Admin & Manager can create tasks)
 router.post('/', async (req, res) => {
   try {
     const {
@@ -158,6 +155,18 @@ router.post('/', async (req, res) => {
     } = req.body;
 
     if (!title) return res.status(400).json({ error: 'Task title is required' });
+
+    let creatorUser = null;
+    if (creator_id) {
+      creatorUser = await User.findById(creator_id);
+      if (creatorUser && creatorUser.role === 'employee') {
+        return res.status(403).json({ error: 'Employees cannot create new tasks. Only Super Admins and Managers can assign tasks.' });
+      }
+    }
+
+    if (!creatorUser) {
+      creatorUser = { name: 'Admin', role: 'super_admin', email: 'admin@company.com' };
+    }
 
     let targetListId = list_id;
     let targetSpaceId = space_id;
@@ -186,8 +195,6 @@ router.post('/', async (req, res) => {
       creator: creator_id || null,
       assignees: assignee_ids || []
     });
-
-    const creatorUser = creator_id ? await User.findById(creator_id) : { name: 'Admin', role: 'super_admin', email: 'admin@company.com' };
 
     // Log creation activity
     await ActivityLog.create({
@@ -338,16 +345,16 @@ router.put('/:id', async (req, res) => {
     }
 
     // Update document fields
-    if (title !== undefined) existing.title = title;
-    if (description !== undefined) existing.description = description;
+    if (title !== undefined && (updater.role !== 'employee' || !existing.title)) existing.title = title;
+    if (description !== undefined && (updater.role !== 'employee' || !existing.description)) existing.description = description;
     if (status !== undefined) existing.status = status;
-    if (priority !== undefined) existing.priority = priority;
-    if (start_date !== undefined) existing.startDate = start_date;
-    if (due_date !== undefined) existing.dueDate = due_date;
+    if (priority !== undefined && updater.role !== 'employee') existing.priority = priority;
+    if (start_date !== undefined && updater.role !== 'employee') existing.startDate = start_date;
+    if (due_date !== undefined && updater.role !== 'employee') existing.dueDate = due_date;
     if (time_estimate !== undefined) existing.timeEstimate = time_estimate;
     if (time_spent !== undefined) existing.timeSpent = time_spent;
-    if (list_id !== undefined) existing.listId = list_id;
-    if (assignee_ids !== undefined) existing.assignees = assignee_ids;
+    if (list_id !== undefined && updater.role !== 'employee') existing.listId = list_id;
+    if (assignee_ids !== undefined && updater.role !== 'employee') existing.assignees = assignee_ids;
 
     await existing.save();
 
@@ -358,7 +365,7 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// Delete task
+// Delete task (Admins/Managers only)
 router.delete('/:id', async (req, res) => {
   try {
     const task = await Task.findById(req.params.id);

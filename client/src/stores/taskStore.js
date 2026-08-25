@@ -160,7 +160,14 @@ export const useTaskStore = defineStore('tasks', {
     async fetchTasks() {
       this.loading = true;
       try {
+        const authStore = useAuthStore();
         const params = {};
+
+        // Pass user role and ID so employees only get their assigned tasks
+        if (authStore.currentUser) {
+          params.user_role = authStore.currentUser.role;
+          params.user_id = authStore.currentUser._id || authStore.currentUser.id;
+        }
 
         if (this.selectedSpaceId) params.space_id = this.selectedSpaceId;
         if (this.selectedListId) params.list_id = this.selectedListId;
@@ -266,7 +273,13 @@ export const useTaskStore = defineStore('tasks', {
 
     async fetchAnalytics() {
       try {
-        const res = await axios.get('/api/analytics');
+        const authStore = useAuthStore();
+        const params = {};
+        if (authStore.currentUser) {
+          params.user_role = authStore.currentUser.role;
+          params.user_id = authStore.currentUser._id || authStore.currentUser.id;
+        }
+        const res = await axios.get('/api/analytics', { params });
         this.analytics = res.data;
       } catch (err) {
         this.error = err.message;

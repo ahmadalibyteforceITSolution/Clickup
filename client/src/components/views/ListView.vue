@@ -66,7 +66,9 @@
             </span>
           </div>
 
+          <!-- Add Task Button (Only for Super Admin & Manager) -->
           <button
+            v-if="authStore.isSuperAdmin || authStore.isManager"
             @click.stop="quickAddTask(group.status)"
             class="text-xs text-purple-600 dark:text-purple-400 hover:text-purple-700 font-semibold flex items-center space-x-1 p-1 hover:bg-purple-50 dark:hover:bg-purple-950/40 rounded transition-colors"
           >
@@ -244,7 +246,7 @@ const currentHeaderTitle = computed(() => {
     const space = taskStore.spaces.find(s => String(s._id || s.id) === String(taskStore.selectedSpaceId));
     return space ? space.name : 'Space Tasks';
   }
-  return 'All Workspace Tasks';
+  return authStore.isEmployee ? 'My Assigned Tasks' : 'All Workspace Tasks';
 });
 
 function getGroupTasks(status) {
