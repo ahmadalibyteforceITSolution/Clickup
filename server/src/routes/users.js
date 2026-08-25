@@ -1,43 +1,31 @@
 import express from 'express';
 import multer from 'multer';
-import path from 'path';
-import fs from 'fs';
-import { fileURLToPath } from 'url';
 import User from '../models/User.js';
 import Task from '../models/Task.js';
 
 const router = express.Router();
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
-const uploadDir = path.join(__dirname, '../../uploads');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, 'avatar-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
-
+// Use memoryStorage for 100% Serverless (Vercel) and Cloud compatibility (No EROFS read-only disk errors)
+const storage = multer.memoryStorage();
 const upload = multer({
   storage,
-  limits: { fileSize: 10 * 1024 * 1024 }
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
 });
 
-// Upload profile avatar
+// Upload profile avatar (stores as optimized base64 data URI in MongoDB Atlas)
 router.post('/:id/avatar', upload.single('avatar'), async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'No avatar image uploaded' });
+    let avatarUrl = '';
+
+    if (req.file) {
+      const base64Data = req.file.buffer.toString('base64');
+      avatarUrl = `data:${req.file.mimetype};base64,${base64Data}`;
+    } else if (req.body.avatar) {
+      avatarUrl = req.body.avatar;
+    } else {
+      return res.status(400).json({ error: 'No avatar image provided' });
     }
 
-    const avatarUrl = `/uploads/${req.file.filename}`;
     const user = await User.findByIdAndUpdate(
       req.params.id,
       { avatar: avatarUrl },
@@ -52,6 +40,7 @@ router.post('/:id/avatar', upload.single('avatar'), async (req, res) => {
       user
     });
   } catch (error) {
+    console.error('Avatar upload error:', error);
     res.status(500).json({ error: error.message });
   }
 });

@@ -1,21 +1,21 @@
 <template>
   <div
     v-if="taskStore.createTaskModalOpen"
-    class="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in"
+    class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in"
     @click.self="taskStore.createTaskModalOpen = false"
   >
-    <div class="bg-white dark:bg-[#202225] rounded-2xl shadow-2xl border border-slate-200 dark:border-[#2F3136] w-full max-w-xl overflow-hidden flex flex-col">
+    <div class="bg-white dark:bg-[#202225] rounded-3xl shadow-2xl border border-slate-200 dark:border-[#2F3136] w-full max-w-xl overflow-hidden flex flex-col">
       <!-- Header -->
-      <div class="px-6 py-4 border-b border-slate-100 dark:border-[#2F3136] flex items-center justify-between">
-        <div class="flex items-center space-x-2">
-          <div class="w-6 h-6 rounded-md bg-purple-600 flex items-center justify-center text-white text-xs font-bold">
+      <div class="px-6 py-4 border-b border-slate-100 dark:border-[#2F3136] flex items-center justify-between bg-slate-50/50 dark:bg-[#18191B]/50">
+        <div class="flex items-center space-x-2.5">
+          <div class="w-7 h-7 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 flex items-center justify-center text-white text-sm font-black shadow-md shadow-purple-500/20">
             +
           </div>
-          <h3 class="text-base font-extrabold text-slate-900 dark:text-white">Create New Task</h3>
+          <h3 class="text-sm font-extrabold text-slate-900 dark:text-white">Create New Task</h3>
         </div>
         <button
           @click="taskStore.createTaskModalOpen = false"
-          class="text-slate-400 hover:text-slate-600 dark:hover:text-white"
+          class="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 rounded-lg"
         >
           <X class="w-5 h-5" />
         </button>
@@ -47,21 +47,51 @@
         </div>
 
         <!-- Target Space & List -->
-        <div class="grid grid-cols-2 gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">Target List</label>
-            <select
-              v-model="form.list_id"
-              class="w-full px-3 py-2 text-xs font-semibold bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none"
-            >
-              <option
-                v-for="l in taskStore.allLists"
-                :key="l._id || l.id"
-                :value="l._id || l.id"
+            <div class="flex items-center justify-between mb-1">
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">Target List *</label>
+              <button
+                type="button"
+                @click="promptQuickCreateList"
+                class="text-[10px] font-bold text-purple-600 dark:text-purple-400 hover:underline"
               >
-                {{ l.name }}
-              </option>
+                + New List
+              </button>
+            </div>
+
+            <!-- List Dropdown (Grouped by Space) -->
+            <select
+              v-if="hasLists"
+              v-model="form.list_id"
+              required
+              class="w-full px-3 py-2 text-xs font-semibold bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] focus:border-purple-500 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none"
+            >
+              <optgroup
+                v-for="space in taskStore.spaces"
+                :key="space._id || space.id"
+                :label="'📁 ' + space.name"
+              >
+                <option
+                  v-for="l in space.lists"
+                  :key="l._id || l.id"
+                  :value="l._id || l.id"
+                >
+                  {{ l.name }}
+                </option>
+              </optgroup>
             </select>
+
+            <!-- Fallback button when no space or list exists yet -->
+            <button
+              v-else
+              type="button"
+              @click="promptQuickCreateList"
+              class="w-full py-2 px-3 border border-dashed border-purple-400 bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-300 text-xs font-bold rounded-xl text-left flex items-center justify-between"
+            >
+              <span>+ Create First Space & List</span>
+              <span class="text-[10px] bg-purple-600 text-white px-2 py-0.5 rounded">Setup</span>
+            </button>
           </div>
 
           <div>
@@ -132,7 +162,8 @@
             </button>
             <button
               type="submit"
-              class="px-5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs font-bold rounded-xl shadow-md shadow-purple-500/20 transition-all active:scale-95"
+              :disabled="!form.title.trim() || !form.list_id"
+              class="px-5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-md shadow-purple-500/20 transition-all active:scale-95"
             >
               Create & Assign
             </button>
@@ -144,7 +175,7 @@
 </template>
 
 <script setup>
-import { reactive, ref, onMounted } from 'vue';
+import { reactive, ref, computed, watch } from 'vue';
 import { X } from 'lucide-vue-next';
 import { useTaskStore } from '@/stores/taskStore';
 import { useAuthStore } from '@/stores/authStore';
@@ -164,19 +195,52 @@ const form = reactive({
   due_date: ''
 });
 
-onMounted(() => {
-  if (taskStore.allLists.length > 0) {
-    form.list_id = taskStore.selectedListId || taskStore.allLists[0]._id || taskStore.allLists[0].id;
+const hasLists = computed(() => {
+  return taskStore.allLists && taskStore.allLists.length > 0;
+});
+
+// Auto-select active or first available list when modal opens
+watch(() => taskStore.createTaskModalOpen, (open) => {
+  if (open) {
+    if (taskStore.selectedListId) {
+      form.list_id = taskStore.selectedListId;
+    } else if (taskStore.allLists.length > 0) {
+      form.list_id = taskStore.allLists[0]._id || taskStore.allLists[0].id;
+    }
   }
 });
 
+async function promptQuickCreateList() {
+  let spaceId = taskStore.selectedSpaceId;
+  if (!spaceId && taskStore.spaces.length > 0) {
+    spaceId = taskStore.spaces[0]._id || taskStore.spaces[0].id;
+  }
+
+  if (!spaceId) {
+    // Create first space first
+    const spaceName = prompt('Enter New Space Name (e.g. General, Engineering):');
+    if (!spaceName || !spaceName.trim()) return;
+    const newSpace = await taskStore.createSpace({
+      name: spaceName.trim(),
+      created_by: authStore.currentUser?._id || authStore.currentUser?.id
+    });
+    spaceId = newSpace._id || newSpace.id;
+  }
+
+  const listName = prompt('Enter New List Name (e.g. Tasks, Backlog, Sprint 1):');
+  if (!listName || !listName.trim()) return;
+
+  const newList = await taskStore.createList(spaceId, { name: listName.trim() });
+  form.list_id = newList._id || newList.id;
+}
+
 async function handleSubmit() {
-  if (!form.title.trim()) return;
+  if (!form.title.trim() || !form.list_id) return;
 
   const payload = {
     title: form.title.trim(),
     description: form.description,
-    list_id: form.list_id || taskStore.allLists[0]?._id || taskStore.allLists[0]?.id,
+    list_id: form.list_id,
     priority: form.priority,
     status: form.status,
     start_date: form.start_date || null,
@@ -191,7 +255,7 @@ async function handleSubmit() {
     form.title = '';
     form.description = '';
     selectedAssigneeId.value = '';
-    taskStore.openTaskModal(created);
+    taskStore.openTaskModal(created._id || created.id || created);
   } catch (err) {
     alert('Failed to create task: ' + err.message);
   }

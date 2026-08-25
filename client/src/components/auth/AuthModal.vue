@@ -97,19 +97,21 @@
             <div class="relative">
               <input
                 v-model="loginForm.password"
-                :type="showPassword ? 'text' : 'password'"
+                :type="showLoginPassword ? 'text' : 'password'"
                 required
                 placeholder="••••••••"
-                class="w-full pl-9 pr-9 py-2 text-xs bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] focus:border-purple-500 rounded-xl text-slate-900 dark:text-white focus:outline-none"
+                class="w-full pl-9 pr-10 py-2 text-xs bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] focus:border-purple-500 rounded-xl text-slate-900 dark:text-white focus:outline-none font-medium"
               />
               <Lock class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+              <!-- Password Show / Hide Toggle Button -->
               <button
                 type="button"
-                @click="showPassword = !showPassword"
-                class="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600"
+                @click="showLoginPassword = !showLoginPassword"
+                class="absolute right-3 top-2 text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 p-1 rounded transition-colors"
+                :title="showLoginPassword ? 'Hide password' : 'Show password'"
               >
-                <EyeOff v-if="showPassword" class="w-3.5 h-3.5" />
-                <Eye v-else class="w-3.5 h-3.5" />
+                <EyeOff v-if="showLoginPassword" class="w-4 h-4" />
+                <Eye v-else class="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -149,14 +151,26 @@
 
           <div>
             <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">Password *</label>
-            <input
-              v-model="regForm.password"
-              type="password"
-              required
-              minlength="6"
-              placeholder="At least 6 characters"
-              class="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] focus:border-purple-500 rounded-xl text-slate-900 dark:text-white focus:outline-none"
-            />
+            <div class="relative">
+              <input
+                v-model="regForm.password"
+                :type="showRegPassword ? 'text' : 'password'"
+                required
+                minlength="6"
+                placeholder="At least 6 characters"
+                class="w-full pl-3 pr-10 py-2 text-xs bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] focus:border-purple-500 rounded-xl text-slate-900 dark:text-white focus:outline-none font-medium"
+              />
+              <!-- Password Show / Hide Toggle Button on Signup -->
+              <button
+                type="button"
+                @click="showRegPassword = !showRegPassword"
+                class="absolute right-3 top-2 text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 p-1 rounded transition-colors"
+                :title="showRegPassword ? 'Hide password' : 'Show password'"
+              >
+                <EyeOff v-if="showRegPassword" class="w-4 h-4" />
+                <Eye v-else class="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
           <div class="grid grid-cols-2 gap-2">
@@ -273,7 +287,8 @@ const authStore = useAuthStore();
 const taskStore = useTaskStore();
 const notifStore = useNotificationStore();
 
-const showPassword = ref(false);
+const showLoginPassword = ref(false);
+const showRegPassword = ref(false);
 const errorMessage = ref('');
 const successMessage = ref('');
 const verificationCode = ref('');

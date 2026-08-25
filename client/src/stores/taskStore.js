@@ -32,6 +32,26 @@ export const useTaskStore = defineStore('tasks', {
   }),
 
   getters: {
+    allLists: (state) => {
+      const result = [];
+      const spaceList = Array.isArray(state.spaces) ? state.spaces : [];
+      spaceList.forEach(s => {
+        if (s.lists && Array.isArray(s.lists)) {
+          s.lists.forEach(l => {
+            result.push({
+              _id: l._id || l.id,
+              id: l._id || l.id,
+              name: l.name,
+              space_id: s._id || s.id,
+              spaceName: s.name,
+              spaceColor: s.color || '#7b68ee'
+            });
+          });
+        }
+      });
+      return result;
+    },
+
     filteredTasks: (state) => {
       const taskList = Array.isArray(state.tasks) ? state.tasks : [];
       return taskList.filter(task => {
