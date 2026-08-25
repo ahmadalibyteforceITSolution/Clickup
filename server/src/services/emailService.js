@@ -1,26 +1,71 @@
 import nodemailer from 'nodemailer';
 import EmailLog from '../models/EmailLog.js';
 import AppSetting from '../models/AppSetting.js';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 let transporter = null;
 
 export async function getTransporter() {
   if (transporter) return transporter;
 
+  // 1. Check environment variables first
+  const envHost = process.env.SMTP_HOST;
+  const envPort = process.env.SMTP_PORT;
+  const envUser = process.env.SMTP_USER;
+  const envPass = process.env.SMTP_PASS;
+
+  if (envUser && envPass) {
+    if (envUser.includes('@gmail.com') || envHost?.includes('gmail')) {
+      transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: envUser,
+          pass: envPass.replace(/\s+/g, '') // remove spaces from App Password
+        }
+      });
+      return transporter;
+    }
+
+    transporter = nodemailer.createTransport({
+      host: envHost || 'smtp.gmail.com',
+      port: parseInt(envPort || '465', 10),
+      secure: envPort === '465' || !envPort,
+      auth: {
+        user: envUser,
+        pass: envPass.replace(/\s+/g, '')
+      }
+    });
+    return transporter;
+  }
+
+  // 2. Check MongoDB app_settings
   try {
     const hostRow = await AppSetting.findOne({ key: 'smtp_host' });
     const portRow = await AppSetting.findOne({ key: 'smtp_port' });
     const userRow = await AppSetting.findOne({ key: 'smtp_user' });
     const passRow = await AppSetting.findOne({ key: 'smtp_pass' });
 
-    if (hostRow && userRow && passRow) {
+    if (userRow && passRow) {
+      if (userRow.value.includes('@gmail.com')) {
+        transporter = nodemailer.createTransport({
+          service: 'gmail',
+          auth: {
+            user: userRow.value,
+            pass: passRow.value.replace(/\s+/g, '')
+          }
+        });
+        return transporter;
+      }
+
       transporter = nodemailer.createTransport({
-        host: hostRow.value,
+        host: hostRow?.value || 'smtp.gmail.com',
         port: parseInt(portRow?.value || '587', 10),
         secure: portRow?.value === '465',
         auth: {
           user: userRow.value,
-          pass: passRow.value
+          pass: passRow.value.replace(/\s+/g, '')
         }
       });
       return transporter;
@@ -29,7 +74,7 @@ export async function getTransporter() {
     console.warn('Using fallback mock email transporter');
   }
 
-  // Fallback to JSON transporter for robust local operation & preview
+  // Fallback to JSON transporter
   transporter = nodemailer.createTransport({
     jsonTransport: true
   });
@@ -99,8 +144,8 @@ function createEmailTemplate({ title, badgeText, badgeColor = '#7b68ee', content
 
       <!-- Footer -->
       <div style="background: #f1f5f9; padding: 18px 30px; text-align: center; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8;">
-        <p style="margin: 0 0 6px 0;">This is an automated security & notification service for ClickUp.</p>
-        <p style="margin: 0;">If you did not request this email, please ignore it.</p>
+        <p style="margin: 0 0 6px 0;">This is an automated notification from your ClickUp Workspace.</p>
+        <p style="margin: 0;">Manage your notification settings in ClickUp Preferences.</p>
       </div>
     </div>
   </body>
@@ -111,12 +156,16 @@ function createEmailTemplate({ title, badgeText, badgeColor = '#7b68ee', content
 export async function sendEmail({ toEmail, toName, subject, html, triggerType, taskId = null }) {
   try {
     const client = await getTransporter();
+    const fromAddr = process.env.FROM_EMAIL || process.env.SMTP_USER || 'notifications@clickup-app.local';
+
     const info = await client.sendMail({
-      from: '"ClickUp Workspace" <notifications@clickup-app.local>',
+      from: `"ClickUp Workspace" <${fromAddr}>`,
       to: `"${toName || toEmail}" <${toEmail}>`,
       subject,
       html
     });
+
+    console.log(`✉️ Email dispatched to ${toEmail} | Message ID: ${info.messageId}`);
 
     const emailLog = await EmailLog.create({
       toEmail,
@@ -148,9 +197,6 @@ export async function sendEmail({ toEmail, toName, subject, html, triggerType, t
   }
 }
 
-/**
- * Send Email Verification Code OTP
- */
 export async function notifyEmailVerification({ user, verificationCode }) {
   const subject = `[ClickUp] Verify Your Email Address - Code: ${verificationCode}`;
 
@@ -166,7 +212,7 @@ export async function notifyEmailVerification({ user, verificationCode }) {
         <div style="display: inline-block; background: #f3f0ff; border: 2px dashed #7b68ee; border-radius: 12px; padding: 16px 36px;">
           <span style="font-size: 32px; font-weight: 800; letter-spacing: 8px; color: #6d28d9; font-family: monospace;">${verificationCode}</span>
         </div>
-        <p style="font-size: 12px; color: #64748b; margin-top: 8px;">This code will expire in 15 minutes.</p>
+        <p style="font-size: 12px; color: #64748b; margin-top: 8px;">This code will expire in 30 minutes.</p>
       </div>
 
       <p>Once verified, you will be able to access your team workspace, manage your assigned tasks, and collaborate in real-time.</p>
@@ -177,8 +223,8 @@ export async function notifyEmailVerification({ user, verificationCode }) {
       { label: 'Department', value: user.department || 'General' }
     ],
     actionBtn: {
-      text: 'Verify Account Now',
-      url: `http://localhost:5173/?verify_email=${encodeURIComponent(user.email)}&code=${verificationCode}`
+      text: 'Open ClickUp Workspace',
+      url: `http://localhost:5173/`
     }
   });
 
