@@ -57,6 +57,10 @@ onMounted(async () => {
 
   if (authStore.currentUser) {
     await notifStore.fetchNotifications(authStore.currentUser._id || authStore.currentUser.id);
+  } else if (authStore.users.length === 0) {
+    // If no users exist, open registration modal for first owner
+    authStore.authModalOpen = true;
+    authStore.authMode = 'register';
   }
 });
 </script>
