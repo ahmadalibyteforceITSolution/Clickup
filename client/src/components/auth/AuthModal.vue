@@ -6,7 +6,7 @@
   >
     <div class="bg-white dark:bg-[#202225] rounded-3xl shadow-2xl border border-slate-200 dark:border-[#2F3136] w-full max-w-md overflow-hidden flex flex-col">
       <!-- Gradient Header -->
-      <div class="bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 p-6 text-white text-center relative">
+      <div class="theme-gradient-bg p-6 text-white text-center relative">
         <button
           @click="authStore.authModalOpen = false"
           class="absolute top-4 right-4 text-white/80 hover:text-white p-1 rounded-full hover:bg-white/10 transition-colors"
@@ -37,7 +37,7 @@
           :class="[
             'flex-1 py-3 text-xs font-bold transition-all border-b-2 text-center',
             authStore.authMode === 'login'
-              ? 'border-purple-600 text-purple-600 dark:text-purple-400 bg-white dark:bg-[#202225]'
+              ? 'theme-border theme-text bg-white dark:bg-[#202225]'
               : 'border-transparent text-slate-400 hover:text-slate-600'
           ]"
         >
@@ -48,7 +48,7 @@
           :class="[
             'flex-1 py-3 text-xs font-bold transition-all border-b-2 text-center',
             authStore.authMode === 'register'
-              ? 'border-purple-600 text-purple-600 dark:text-purple-400 bg-white dark:bg-[#202225]'
+              ? 'theme-border theme-text bg-white dark:bg-[#202225]'
               : 'border-transparent text-slate-400 hover:text-slate-600'
           ]"
         >
@@ -86,7 +86,7 @@
                 type="email"
                 required
                 placeholder="you@company.com"
-                class="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] focus:border-purple-500 rounded-xl text-slate-900 dark:text-white focus:outline-none"
+                class="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] focus:outline-none rounded-xl text-slate-900 dark:text-white theme-border"
               />
               <Mail class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
             </div>
@@ -100,14 +100,14 @@
                 :type="showLoginPassword ? 'text' : 'password'"
                 required
                 placeholder="••••••••"
-                class="w-full pl-9 pr-10 py-2 text-xs bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] focus:border-purple-500 rounded-xl text-slate-900 dark:text-white focus:outline-none font-medium"
+                class="w-full pl-9 pr-10 py-2 text-xs bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] focus:outline-none rounded-xl text-slate-900 dark:text-white font-medium theme-border"
               />
               <Lock class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
               <!-- Password Show / Hide Toggle Button -->
               <button
                 type="button"
                 @click="showLoginPassword = !showLoginPassword"
-                class="absolute right-3 top-2 text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 p-1 rounded transition-colors"
+                class="absolute right-3 top-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded transition-colors"
                 :title="showLoginPassword ? 'Hide password' : 'Show password'"
               >
                 <EyeOff v-if="showLoginPassword" class="w-4 h-4" />
@@ -119,7 +119,7 @@
           <button
             type="submit"
             :disabled="authStore.loading"
-            class="w-full py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold text-xs rounded-xl shadow-md shadow-purple-500/20 transition-all active:scale-95 disabled:opacity-50"
+            class="w-full py-2.5 theme-gradient-bg hover:opacity-90 text-white font-bold text-xs rounded-xl shadow-md theme-shadow transition-all active:scale-95 disabled:opacity-50"
           >
             {{ authStore.loading ? 'Signing In...' : 'Sign In' }}
           </button>
@@ -134,7 +134,7 @@
               type="text"
               required
               placeholder="e.g. Alex Mercer"
-              class="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] focus:border-purple-500 rounded-xl text-slate-900 dark:text-white focus:outline-none"
+              class="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] rounded-xl text-slate-900 dark:text-white focus:outline-none theme-border"
             />
           </div>
 
@@ -145,7 +145,7 @@
               type="email"
               required
               placeholder="alex@company.com"
-              class="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] focus:border-purple-500 rounded-xl text-slate-900 dark:text-white focus:outline-none"
+              class="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] rounded-xl text-slate-900 dark:text-white focus:outline-none theme-border"
             />
           </div>
 
@@ -158,13 +158,13 @@
                 required
                 minlength="6"
                 placeholder="At least 6 characters"
-                class="w-full pl-3 pr-10 py-2 text-xs bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] focus:border-purple-500 rounded-xl text-slate-900 dark:text-white focus:outline-none font-medium"
+                class="w-full pl-3 pr-10 py-2 text-xs bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] rounded-xl text-slate-900 dark:text-white focus:outline-none font-medium theme-border"
               />
               <!-- Password Show / Hide Toggle Button on Signup -->
               <button
                 type="button"
                 @click="showRegPassword = !showRegPassword"
-                class="absolute right-3 top-2 text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 p-1 rounded transition-colors"
+                class="absolute right-3 top-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded transition-colors"
                 :title="showRegPassword ? 'Hide password' : 'Show password'"
               >
                 <EyeOff v-if="showRegPassword" class="w-4 h-4" />
@@ -178,7 +178,7 @@
             <select
               v-model="regForm.department"
               @change="onRegDepartmentChange"
-              class="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] focus:border-purple-500 rounded-xl text-slate-900 dark:text-white focus:outline-none font-semibold"
+              class="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] rounded-xl text-slate-900 dark:text-white focus:outline-none font-semibold theme-border"
             >
               <option value="SMM">📱 SMM (Social Media Marketing)</option>
               <option value="GRAPHICS DESIGNER">🎨 GRAPHICS DESIGNER</option>
@@ -191,48 +191,33 @@
           <button
             type="submit"
             :disabled="authStore.loading"
-            class="w-full py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold text-xs rounded-xl shadow-md shadow-purple-500/20 transition-all active:scale-95 disabled:opacity-50"
+            class="w-full py-2.5 theme-gradient-bg hover:opacity-90 text-white font-bold text-xs rounded-xl shadow-md theme-shadow transition-all active:scale-95 disabled:opacity-50"
           >
             {{ authStore.loading ? 'Creating Account...' : 'Register & Send Code' }}
           </button>
         </form>
 
-        <!-- 3. EMAIL VERIFICATION FORM (6-digit OTP) -->
-        <form v-else-if="authStore.authMode === 'verify'" @submit.prevent="handleVerifyEmail" class="space-y-4">
+        <!-- 3. VERIFICATION CODE FORM (OTP Verification) -->
+        <form v-else-if="authStore.authMode === 'verify'" @submit.prevent="handleVerify" class="space-y-4">
           <div class="text-center space-y-1">
-            <p class="text-xs text-slate-600 dark:text-slate-400">
-              We sent a 6-digit verification code to:
+            <p class="text-xs text-slate-600 dark:text-slate-300">
+              We emailed a 6-digit verification code to
             </p>
-            <p class="text-xs font-bold text-purple-600 dark:text-purple-400">{{ authStore.unverifiedEmail }}</p>
-          </div>
-
-          <!-- Code Helper Banner if available in response -->
-          <div
-            v-if="authStore.previewVerificationCode"
-            class="p-3 bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 rounded-xl text-center space-y-1"
-          >
-            <p class="text-[11px] text-purple-700 dark:text-purple-300 font-semibold">⚡ Your Verification Code:</p>
-            <div class="flex items-center justify-center space-x-2">
-              <span class="text-lg font-mono font-black text-purple-900 dark:text-purple-200 tracking-widest">{{ authStore.previewVerificationCode }}</span>
-              <button
-                type="button"
-                @click="verificationCode = authStore.previewVerificationCode"
-                class="text-[10px] bg-purple-600 hover:bg-purple-700 text-white font-bold px-2 py-0.5 rounded shadow-sm"
-              >
-                Auto-fill
-              </button>
-            </div>
+            <p class="text-xs font-black theme-text">{{ authStore.pendingVerificationEmail }}</p>
+            <p class="text-[10px] text-slate-400">Please check your inbox or MongoDB email outbox.</p>
           </div>
 
           <div>
-            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1 text-center">6-DIGIT CODE</label>
+            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1 text-center">
+              Enter 6-Digit Code
+            </label>
             <input
               v-model="verificationCode"
               type="text"
-              maxlength="6"
               required
-              placeholder="1 2 3 4 5 6"
-              class="w-full text-center tracking-[12px] font-mono text-2xl font-black px-4 py-3 bg-slate-50 dark:bg-[#18191B] border-2 border-purple-500 rounded-2xl text-purple-900 dark:text-purple-300 focus:outline-none shadow-sm"
+              maxlength="6"
+              placeholder="123456"
+              class="w-full py-3 text-center text-xl font-mono tracking-widest bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] rounded-xl text-slate-900 dark:text-white focus:outline-none theme-border font-bold"
             />
           </div>
 
@@ -248,7 +233,7 @@
             <button
               type="button"
               @click="handleResendCode"
-              class="text-purple-600 dark:text-purple-400 hover:underline font-semibold"
+              class="theme-text hover:underline font-semibold"
             >
               Resend Code
             </button>
@@ -325,7 +310,6 @@ async function handleRegister() {
   errorMessage.value = '';
   successMessage.value = '';
   try {
-    // Ensure all registered accounts are employees by default
     regForm.role = 'employee';
     const res = await authStore.register(regForm);
     successMessage.value = res.message || 'Verification code sent to your email!';
@@ -334,10 +318,10 @@ async function handleRegister() {
   }
 }
 
-async function handleVerifyEmail() {
+async function handleVerify() {
   errorMessage.value = '';
   try {
-    await authStore.verifyEmail(authStore.unverifiedEmail, verificationCode.value.trim());
+    await authStore.verifyEmail(authStore.pendingVerificationEmail, verificationCode.value.trim());
     await taskStore.fetchTasks();
     if (authStore.currentUser) {
       await notifStore.fetchNotifications(authStore.currentUser.id || authStore.currentUser._id);
@@ -350,8 +334,8 @@ async function handleVerifyEmail() {
 async function handleResendCode() {
   errorMessage.value = '';
   try {
-    const res = await authStore.resendVerificationCode(authStore.unverifiedEmail);
-    successMessage.value = res.message;
+    await authStore.resendVerificationCode(authStore.pendingVerificationEmail);
+    successMessage.value = 'A new 6-digit code has been dispatched to your email!';
   } catch (err) {
     errorMessage.value = err.message;
   }

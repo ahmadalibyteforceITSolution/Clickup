@@ -5,7 +5,7 @@
       <div>
         <h1 class="text-xl font-extrabold text-slate-900 dark:text-white flex items-center space-x-2">
           <span>{{ currentHeaderTitle }}</span>
-          <span class="text-xs bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold px-2 py-0.5 rounded-full">
+          <span class="text-xs theme-light-bg theme-text font-bold px-2.5 py-0.5 rounded-full">
             {{ taskStore.filteredTasks.length }} tasks
           </span>
         </h1>
@@ -13,11 +13,11 @@
       </div>
 
       <!-- Priority Filter Pills -->
-      <div class="flex items-center space-x-1.5 bg-slate-100 dark:bg-[#18191B] p-1 rounded-lg border border-slate-200 dark:border-[#2F3136]">
+      <div class="flex items-center space-x-1.5 bg-slate-100 dark:bg-[#18191B] p-1 rounded-xl border border-slate-200 dark:border-[#2F3136]">
         <button
           @click="taskStore.priorityFilter = null; taskStore.fetchTasks()"
           :class="[
-            'px-2.5 py-1 rounded text-xs font-semibold transition-all',
+            'px-2.5 py-1 rounded-lg text-xs font-semibold transition-all',
             !taskStore.priorityFilter ? 'bg-white dark:bg-[#202225] text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'
           ]"
         >
@@ -28,7 +28,7 @@
           :key="p"
           @click="taskStore.priorityFilter = p; taskStore.fetchTasks()"
           :class="[
-            'px-2.5 py-1 rounded text-xs font-semibold uppercase tracking-wider transition-all',
+            'px-2.5 py-1 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all',
             taskStore.priorityFilter === p ? 'bg-white dark:bg-[#202225] shadow-sm font-bold ' + getPriorityTextColor(p) : 'text-slate-500 hover:text-slate-700'
           ]"
         >
@@ -42,7 +42,7 @@
       <div
         v-for="group in statusGroups"
         :key="group.status"
-        class="bg-white dark:bg-[#202225] rounded-xl border border-slate-200 dark:border-[#2F3136] shadow-sm overflow-hidden"
+        class="bg-white dark:bg-[#202225] rounded-2xl border border-slate-200 dark:border-[#2F3136] shadow-sm overflow-hidden"
       >
         <!-- Group Header -->
         <div
@@ -70,7 +70,7 @@
           <button
             v-if="authStore.isSuperAdmin || authStore.isManager"
             @click.stop="quickAddTask(group.status)"
-            class="text-xs text-purple-600 dark:text-purple-400 hover:text-purple-700 font-semibold flex items-center space-x-1 p-1 hover:bg-purple-50 dark:hover:bg-purple-950/40 rounded transition-colors"
+            class="text-xs theme-text font-semibold flex items-center space-x-1 p-1 hover:opacity-80 rounded transition-colors"
           >
             <Plus class="w-3.5 h-3.5" />
             <span>Add Task</span>
@@ -83,7 +83,7 @@
             v-for="task in getGroupTasks(group.status)"
             :key="task._id || task.id"
             @click="taskStore.openTaskModal(task)"
-            class="px-4 py-3 hover:bg-purple-50/30 dark:hover:bg-[#292B2F] cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-3 transition-colors group"
+            class="px-4 py-3 hover:bg-slate-50/80 dark:hover:bg-[#292B2F] cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-3 transition-colors group"
           >
             <!-- Left: Checkbox, Title & Subtasks info -->
             <div class="flex items-center space-x-3 min-w-0 flex-1">
@@ -107,7 +107,7 @@
                       'text-xs md:text-sm font-semibold truncate',
                       task.status === 'completed'
                         ? 'line-through text-slate-400 dark:text-slate-500'
-                        : 'text-slate-900 dark:text-slate-100 group-hover:text-purple-600 dark:group-hover:text-purple-400'
+                        : 'text-slate-900 dark:text-slate-100 group-hover:underline'
                     ]"
                   >
                     {{ task.title }}
@@ -238,23 +238,21 @@ const collapsedGroups = reactive({
 });
 
 const currentHeaderTitle = computed(() => {
-  if (taskStore.selectedListId) {
-    const list = taskStore.allLists.find(l => String(l._id || l.id) === String(taskStore.selectedListId));
-    return list ? list.name : 'List Tasks';
+  if (taskStore.selectedListId && taskStore.activeList) {
+    return taskStore.activeList.name;
   }
-  if (taskStore.selectedSpaceId) {
-    const space = taskStore.spaces.find(s => String(s._id || s.id) === String(taskStore.selectedSpaceId));
-    return space ? space.name : 'Space Tasks';
+  if (taskStore.selectedSpaceId && taskStore.activeSpace) {
+    return taskStore.activeSpace.name;
   }
   return authStore.isEmployee ? 'My Assigned Tasks' : 'All Workspace Tasks';
 });
 
-function getGroupTasks(status) {
-  return taskStore.filteredTasks.filter(t => t.status === status);
-}
-
 function toggleCollapse(status) {
   collapsedGroups[status] = !collapsedGroups[status];
+}
+
+function getGroupTasks(status) {
+  return taskStore.filteredTasks.filter(t => (t.status || 'pending') === status);
 }
 
 function quickAddTask(status) {
@@ -263,14 +261,7 @@ function quickAddTask(status) {
 
 async function toggleTaskCompleted(task) {
   const newStatus = task.status === 'completed' ? 'pending' : 'completed';
-  try {
-    await taskStore.updateTask(task._id || task.id, {
-      status: newStatus,
-      updated_by: authStore.currentUser?._id || authStore.currentUser?.id
-    });
-  } catch (err) {
-    alert('Failed to update task status: ' + err.message);
-  }
+  await taskStore.updateTask(task._id || task.id, { status: newStatus });
 }
 
 function isOverdue(task) {
@@ -279,6 +270,7 @@ function isOverdue(task) {
 }
 
 function formatDateDisplay(dateStr) {
+  if (!dateStr) return '';
   try {
     return format(new Date(dateStr), 'MMM d');
   } catch (e) {
@@ -286,23 +278,27 @@ function formatDateDisplay(dateStr) {
   }
 }
 
-function getPriorityTextColor(p) {
-  const map = {
-    urgent: 'text-red-600',
-    high: 'text-orange-600',
-    normal: 'text-blue-600',
-    low: 'text-slate-600'
-  };
-  return map[p] || 'text-slate-600';
+function getPriorityBadgeClass(priority) {
+  switch (priority) {
+    case 'urgent':
+      return 'bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-300';
+    case 'high':
+      return 'bg-orange-100 text-orange-700 dark:bg-orange-950/60 dark:text-orange-300';
+    case 'normal':
+      return 'bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300';
+    case 'low':
+    default:
+      return 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400';
+  }
 }
 
-function getPriorityBadgeClass(p) {
-  const map = {
-    urgent: 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300',
-    high: 'bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300',
-    normal: 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300',
-    low: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
-  };
-  return map[p] || 'bg-slate-100 text-slate-600';
+function getPriorityTextColor(priority) {
+  switch (priority) {
+    case 'urgent': return 'text-red-600 dark:text-red-400';
+    case 'high': return 'text-orange-600 dark:text-orange-400';
+    case 'normal': return 'text-blue-600 dark:text-blue-400';
+    case 'low': return 'text-slate-500';
+    default: return 'text-slate-700 dark:text-slate-300';
+  }
 }
 </script>

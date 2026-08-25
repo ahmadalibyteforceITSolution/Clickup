@@ -4,7 +4,7 @@
       <div>
         <h1 class="text-xl font-extrabold text-slate-900 dark:text-white flex items-center space-x-2">
           <span>Kanban Board</span>
-          <span class="text-xs bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 font-bold px-2 py-0.5 rounded-full">
+          <span class="text-xs theme-light-bg theme-text font-bold px-2.5 py-0.5 rounded-full">
             {{ taskStore.filteredTasks.length }} Cards
           </span>
         </h1>
@@ -12,8 +12,9 @@
       </div>
 
       <button
+        v-if="authStore.isSuperAdmin || authStore.isManager"
         @click="taskStore.createTaskModalOpen = true"
-        class="bg-purple-600 hover:bg-purple-700 text-white font-semibold text-xs px-3 py-1.5 rounded-lg flex items-center space-x-1.5 shadow-sm transition-all"
+        class="theme-bg text-white font-semibold text-xs px-3.5 py-1.5 rounded-xl flex items-center space-x-1.5 shadow-sm transition-all hover:opacity-90 active:scale-95"
       >
         <Plus class="w-3.5 h-3.5" />
         <span>Add Task</span>
@@ -27,7 +28,7 @@
         :key="col.status"
         @dragover.prevent
         @drop="handleDrop($event, col.status)"
-        class="w-72 sm:w-80 bg-slate-100 dark:bg-[#1e2023] rounded-xl p-3 border border-slate-200/80 dark:border-[#2F3136] flex flex-col max-h-[calc(100vh-180px)] shadow-sm"
+        class="w-72 sm:w-80 bg-slate-100 dark:bg-[#1e2023] rounded-2xl p-3 border border-slate-200/80 dark:border-[#2F3136] flex flex-col max-h-[calc(100vh-180px)] shadow-sm"
       >
         <!-- Column Header -->
         <div class="flex items-center justify-between px-2 py-1.5 mb-2">
@@ -42,8 +43,9 @@
           </div>
 
           <button
+            v-if="authStore.isSuperAdmin || authStore.isManager"
             @click="openQuickCreate(col.status)"
-            class="text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
+            class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
             title="Quick add to this column"
           >
             <Plus class="w-4 h-4" />
@@ -58,7 +60,7 @@
             draggable="true"
             @dragstart="handleDragStart($event, task)"
             @click="taskStore.openTaskModal(task)"
-            class="bg-white dark:bg-[#25282c] p-3.5 rounded-xl border border-slate-200 dark:border-[#2F3136] shadow-sm hover:shadow-md hover:border-purple-500/50 cursor-grab active:cursor-grabbing transition-all space-y-2.5 group"
+            class="bg-white dark:bg-[#25282c] p-3.5 rounded-2xl border border-slate-200 dark:border-[#2F3136] shadow-sm hover:shadow-md cursor-grab active:cursor-grabbing transition-all space-y-2.5 group hover:border-[var(--theme-primary)]"
           >
             <!-- Card Top: List tag & Priority -->
             <div class="flex items-center justify-between">
@@ -82,7 +84,7 @@
 
             <!-- Card Title & Description snippet -->
             <div>
-              <h4 class="text-xs font-bold text-slate-900 dark:text-slate-100 group-hover:text-purple-600 dark:group-hover:text-purple-400 leading-snug">
+              <h4 class="text-xs font-bold text-slate-900 dark:text-slate-100 leading-snug group-hover:underline">
                 {{ task.title }}
               </h4>
               <p
@@ -101,7 +103,7 @@
               </div>
               <div class="w-full h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
                 <div
-                  class="h-full bg-purple-500 rounded-full transition-all"
+                  class="h-full theme-bg rounded-full transition-all"
                   :style="{ width: `${(task.subtasks.filter(s => s.completed).length / task.subtasks.length) * 100}%` }"
                 ></div>
               </div>
@@ -178,32 +180,19 @@ const columns = [
   { status: 'completed', label: 'Complete', color: '#10B981' }
 ];
 
-let draggedTaskId = null;
-
 function getColumnTasks(status) {
-  return taskStore.filteredTasks.filter(t => t.status === status);
+  return taskStore.filteredTasks.filter(t => (t.status || 'pending') === status);
 }
 
 function handleDragStart(event, task) {
-  draggedTaskId = task._id || task.id;
-  event.dataTransfer.setData('text/plain', draggedTaskId);
+  event.dataTransfer.setData('text/plain', task._id || task.id);
+  event.dataTransfer.effectAllowed = 'move';
 }
 
 async function handleDrop(event, targetStatus) {
-  event.preventDefault();
-  const taskId = event.dataTransfer.getData('text/plain') || draggedTaskId;
-  if (!taskId) return;
-
-  const task = taskStore.tasks.find(t => (t._id || t.id) === taskId);
-  if (task && task.status !== targetStatus) {
-    try {
-      await taskStore.updateTask(taskId, {
-        status: targetStatus,
-        updated_by: authStore.currentUser?._id || authStore.currentUser?.id
-      });
-    } catch (err) {
-      alert('Failed to move task: ' + err.message);
-    }
+  const taskId = event.dataTransfer.getData('text/plain');
+  if (taskId) {
+    await taskStore.updateTask(taskId, { status: targetStatus });
   }
 }
 
@@ -217,6 +206,7 @@ function isOverdue(task) {
 }
 
 function formatDateDisplay(dateStr) {
+  if (!dateStr) return '';
   try {
     return format(new Date(dateStr), 'MMM d');
   } catch (e) {
@@ -224,13 +214,17 @@ function formatDateDisplay(dateStr) {
   }
 }
 
-function getPriorityBadgeClass(p) {
-  const map = {
-    urgent: 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300',
-    high: 'bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300',
-    normal: 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300',
-    low: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
-  };
-  return map[p] || 'bg-slate-100 text-slate-600';
+function getPriorityBadgeClass(priority) {
+  switch (priority) {
+    case 'urgent':
+      return 'bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-300';
+    case 'high':
+      return 'bg-orange-100 text-orange-700 dark:bg-orange-950/60 dark:text-orange-300';
+    case 'normal':
+      return 'bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300';
+    case 'low':
+    default:
+      return 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400';
+  }
 }
 </script>

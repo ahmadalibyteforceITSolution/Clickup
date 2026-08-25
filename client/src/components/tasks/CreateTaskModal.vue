@@ -8,7 +8,7 @@
       <!-- Header -->
       <div class="px-6 py-4 border-b border-slate-100 dark:border-[#2F3136] flex items-center justify-between bg-slate-50/50 dark:bg-[#18191B]/50">
         <div class="flex items-center space-x-2.5">
-          <div class="w-7 h-7 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 flex items-center justify-center text-white text-sm font-black shadow-md shadow-purple-500/20">
+          <div class="w-7 h-7 rounded-lg theme-gradient-bg flex items-center justify-center text-white text-sm font-black shadow-md theme-shadow">
             +
           </div>
           <h3 class="text-sm font-extrabold text-slate-900 dark:text-white">Create New Task</h3>
@@ -31,7 +31,7 @@
             type="text"
             required
             placeholder="e.g. Design responsive UI components..."
-            class="w-full px-3.5 py-2 text-sm bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] focus:border-purple-500 rounded-xl text-slate-900 dark:text-white focus:outline-none"
+            class="w-full px-3.5 py-2 text-sm bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] rounded-xl text-slate-900 dark:text-white focus:outline-none theme-border"
           />
         </div>
 
@@ -42,7 +42,7 @@
             v-model="form.description"
             rows="3"
             placeholder="Add context, specifications, or acceptance criteria..."
-            class="w-full px-3.5 py-2 text-xs sm:text-sm bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] focus:border-purple-500 rounded-xl text-slate-900 dark:text-white focus:outline-none"
+            class="w-full px-3.5 py-2 text-xs sm:text-sm bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] rounded-xl text-slate-900 dark:text-white focus:outline-none theme-border"
           ></textarea>
         </div>
 
@@ -58,24 +58,24 @@
               v-if="hasLists"
               v-model="form.list_id"
               required
-              class="w-full px-3 py-2 text-xs font-semibold bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] focus:border-purple-500 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none"
+              class="w-full px-3 py-2 text-xs font-semibold bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none theme-border"
             >
+              <option value="" disabled>Select target list</option>
               <optgroup
                 v-for="space in taskStore.spaces"
                 :key="space._id || space.id"
-                :label="'📁 ' + space.name"
+                :label="space.name"
               >
                 <option
-                  v-for="l in space.lists"
-                  :key="l._id || l.id"
-                  :value="l._id || l.id"
+                  v-for="list in space.lists"
+                  :key="list._id || list.id"
+                  :value="list._id || list.id"
                 >
-                  {{ l.name }}
+                  📁 {{ space.name }} / {{ list.name }}
                 </option>
               </optgroup>
             </select>
 
-            <!-- Fallback state when no space or list exists yet -->
             <div
               v-else
               class="w-full py-2 px-3 border border-dashed border-slate-300 bg-slate-50 dark:bg-[#18191B] text-slate-500 text-xs font-semibold rounded-xl text-left"
@@ -153,7 +153,7 @@
             <button
               type="submit"
               :disabled="!form.title.trim() || !form.list_id || isSubmitting"
-              class="px-5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-md shadow-purple-500/20 transition-all active:scale-95"
+              class="px-5 py-2 theme-gradient-bg disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-md theme-shadow transition-all active:scale-95 hover:opacity-90"
             >
               {{ isSubmitting ? 'Creating...' : 'Create & Assign' }}
             </button>
@@ -189,16 +189,23 @@ const form = reactive({
 });
 
 const hasLists = computed(() => {
-  return taskStore.allLists && taskStore.allLists.length > 0;
+  return taskStore.spaces && taskStore.spaces.some(s => s.lists && s.lists.length > 0);
 });
 
-// Auto-select active or first available list when modal opens
-watch(() => taskStore.createTaskModalOpen, (open) => {
-  if (open) {
+// Auto-select active list if one is currently selected in sidebar
+watch(() => taskStore.createTaskModalOpen, (isOpen) => {
+  if (isOpen) {
+    isSubmitting.value = false;
     if (taskStore.selectedListId) {
       form.list_id = taskStore.selectedListId;
-    } else if (taskStore.allLists.length > 0) {
-      form.list_id = taskStore.allLists[0]._id || taskStore.allLists[0].id;
+    } else {
+      // Find first available list across all spaces
+      for (const space of taskStore.spaces) {
+        if (space.lists && space.lists.length > 0) {
+          form.list_id = space.lists[0]._id || space.lists[0].id;
+          break;
+        }
+      }
     }
   }
 });
@@ -207,27 +214,30 @@ async function handleSubmit() {
   if (!form.title.trim() || !form.list_id || isSubmitting.value) return;
 
   isSubmitting.value = true;
-
-  const payload = {
-    title: form.title.trim(),
-    description: form.description,
-    list_id: form.list_id,
-    priority: form.priority,
-    status: form.status,
-    start_date: form.start_date || null,
-    due_date: form.due_date || null,
-    creator_id: authStore.currentUser?._id || authStore.currentUser?.id,
-    assignee_ids: selectedAssigneeId.value ? [selectedAssigneeId.value] : []
-  };
-
   try {
-    const created = await taskStore.createTask(payload);
-    taskStore.createTaskModalOpen = false;
+    const payload = {
+      title: form.title.trim(),
+      description: form.description.trim(),
+      list_id: form.list_id,
+      priority: form.priority,
+      status: form.status,
+      startDate: form.start_date || null,
+      dueDate: form.due_date || null,
+      assignees: selectedAssigneeId.value ? [selectedAssigneeId.value] : []
+    };
+
+    await taskStore.createTask(payload);
+    uiStore.success(`Task "${form.title.trim()}" created successfully!`);
+
+    // Reset Form
     form.title = '';
     form.description = '';
     selectedAssigneeId.value = '';
-    uiStore.success(`Task "${payload.title}" created and assigned!`);
-    taskStore.openTaskModal(created._id || created.id || created);
+    form.start_date = '';
+    form.due_date = '';
+
+    // Immediately close modal
+    taskStore.createTaskModalOpen = false;
   } catch (err) {
     uiStore.error('Failed to create task: ' + err.message);
   } finally {

@@ -5,13 +5,13 @@
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div class="flex items-center space-x-3">
-            <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-pink-500 via-purple-600 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-purple-500/25">
+            <div class="w-10 h-10 rounded-2xl theme-gradient-bg flex items-center justify-center text-white shadow-lg theme-shadow">
               <Share2 class="w-5 h-5" />
             </div>
             <div>
               <h1 class="text-xl font-black text-slate-900 dark:text-white flex items-center space-x-2">
                 <span>SMM & Campaign Sheet</span>
-                <span class="text-xs px-2.5 py-0.5 bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 font-extrabold rounded-full">
+                <span class="text-xs px-2.5 py-0.5 theme-light-bg theme-text font-extrabold rounded-full">
                   {{ smmStore.filteredCampaigns.length }} Links
                 </span>
               </h1>
@@ -39,7 +39,7 @@
             @click="smmStore.exportCsvFile()"
             class="px-3.5 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-[#18191B] hover:bg-slate-50 dark:hover:bg-[#292B2F] border border-slate-200 dark:border-[#2F3136] rounded-xl flex items-center space-x-1.5 shadow-xs transition-colors"
           >
-            <Download class="w-4 h-4 text-purple-500" />
+            <Download class="w-4 h-4 theme-text" />
             <span>Export CSV</span>
           </button>
 
@@ -57,7 +57,7 @@
           <button
             v-if="authStore.isSmmMember"
             @click="openCreateModal"
-            class="px-4 py-2 text-xs font-extrabold text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 rounded-xl flex items-center space-x-1.5 shadow-md shadow-purple-500/20 transition-all active:scale-95"
+            class="px-4 py-2 text-xs font-extrabold text-white theme-gradient-bg hover:opacity-90 rounded-xl flex items-center space-x-1.5 shadow-md theme-shadow transition-all active:scale-95"
           >
             <Plus class="w-4 h-4" />
             <span>+ Add Campaign Link</span>
@@ -77,7 +77,7 @@
         </div>
         <div class="p-3 bg-slate-50 dark:bg-[#18191B] rounded-2xl border border-slate-100 dark:border-[#2F3136]">
           <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Total Clicks</span>
-          <p class="text-base font-black text-purple-600 dark:text-purple-400 mt-0.5">{{ smmStore.totalClicks.toLocaleString() }}</p>
+          <p class="text-base font-black theme-text mt-0.5">{{ smmStore.totalClicks.toLocaleString() }}</p>
         </div>
         <div class="p-3 bg-slate-50 dark:bg-[#18191B] rounded-2xl border border-slate-100 dark:border-[#2F3136]">
           <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Total Impressions</span>
@@ -94,7 +94,7 @@
             v-model="smmStore.searchQuery"
             type="text"
             placeholder="Search campaigns, links, audience, notes..."
-            class="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] focus:border-purple-500 rounded-xl text-slate-900 dark:text-white focus:outline-none"
+            class="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] focus:outline-none theme-border rounded-xl text-slate-900 dark:text-white"
           />
         </div>
 
@@ -183,7 +183,7 @@
                   :href="c.url"
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="text-purple-600 dark:text-purple-400 hover:underline flex items-center space-x-1 truncate font-medium"
+                  class="theme-text hover:underline flex items-center space-x-1 truncate font-medium"
                 >
                   <span class="truncate">{{ c.url }}</span>
                   <ExternalLink class="w-3.5 h-3.5 shrink-0 ml-1 opacity-70" />
@@ -243,7 +243,7 @@
                 <div class="flex items-center justify-center space-x-1.5">
                   <button
                     @click="openEditModal(c)"
-                    class="p-1.5 text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/40 rounded-lg transition-colors"
+                    class="p-1.5 text-slate-400 hover:text-white rounded-lg transition-colors hover:bg-slate-700/50"
                     title="Edit Campaign"
                   >
                     <Edit3 class="w-3.5 h-3.5" />
@@ -278,7 +278,7 @@
                     <button
                       v-if="authStore.isSmmMember"
                       @click="openCreateModal"
-                      class="px-3.5 py-1.5 text-xs font-bold text-white bg-purple-600 rounded-xl"
+                      class="px-3.5 py-1.5 text-xs font-bold text-white theme-bg rounded-xl"
                     >
                       + Add Link
                     </button>
@@ -300,7 +300,7 @@
       <div class="bg-white dark:bg-[#202225] rounded-3xl shadow-2xl border border-slate-200 dark:border-[#2F3136] w-full max-w-lg overflow-hidden flex flex-col">
         <div class="px-6 py-4 border-b border-slate-100 dark:border-[#2F3136] flex items-center justify-between bg-slate-50/50 dark:bg-[#18191B]/50">
           <h3 class="text-sm font-extrabold text-slate-900 dark:text-white flex items-center space-x-2">
-            <Share2 class="w-4 h-4 text-purple-600" />
+            <Share2 class="w-4 h-4 theme-text" />
             <span>{{ isEditing ? 'Edit Campaign Link' : 'Add New Campaign Link' }}</span>
           </h3>
           <button @click="campaignModalOpen = false" class="text-slate-400 hover:text-slate-600">
@@ -316,7 +316,7 @@
               type="text"
               required
               placeholder="e.g. Summer Promo, Black Friday Story Tag..."
-              class="w-full px-3.5 py-2 bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] focus:border-purple-500 rounded-xl text-slate-900 dark:text-white focus:outline-none"
+              class="w-full px-3.5 py-2 bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] rounded-xl text-slate-900 dark:text-white focus:outline-none theme-border"
             />
           </div>
 
@@ -361,7 +361,7 @@
               type="url"
               required
               placeholder="https://instagram.com/p/... or https://ads.facebook.com/..."
-              class="w-full px-3.5 py-2 bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] focus:border-purple-500 rounded-xl text-slate-900 dark:text-white focus:outline-none"
+              class="w-full px-3.5 py-2 bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] rounded-xl text-slate-900 dark:text-white focus:outline-none theme-border"
             />
           </div>
 
@@ -429,7 +429,7 @@
             </button>
             <button
               type="submit"
-              class="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl shadow-md shadow-purple-500/20 transition-all active:scale-95"
+              class="px-5 py-2 theme-bg hover:opacity-90 text-white font-bold rounded-xl shadow-md transition-all active:scale-95"
             >
               {{ isEditing ? 'Save Changes' : 'Add to Sheet' }}
             </button>
@@ -461,7 +461,7 @@
 
         <!-- Dropzone -->
         <div
-          class="border-2 border-dashed border-slate-300 dark:border-[#2F3136] hover:border-purple-500 rounded-2xl p-6 text-center cursor-pointer transition-colors bg-slate-50/50 dark:bg-[#18191B]/50"
+          class="border-2 border-dashed border-slate-300 dark:border-[#2F3136] theme-border rounded-2xl p-6 text-center cursor-pointer transition-colors bg-slate-50/50 dark:bg-[#18191B]/50"
           @click="triggerCsvInput"
         >
           <input
@@ -471,11 +471,11 @@
             @change="handleCsvFileSelected"
             class="hidden"
           />
-          <FileSpreadsheet class="w-10 h-10 text-purple-500 mx-auto mb-2" />
+          <FileSpreadsheet class="w-10 h-10 theme-text mx-auto mb-2" />
           <p v-if="!selectedCsvFile" class="text-xs font-bold text-slate-700 dark:text-slate-200">
             Click to select or drop .csv file here
           </p>
-          <p v-else class="text-xs font-extrabold text-purple-600 dark:text-purple-400 truncate">
+          <p v-else class="text-xs font-extrabold theme-text truncate">
             📄 {{ selectedCsvFile.name }} ({{ Math.round(selectedCsvFile.size / 1024) }} KB)
           </p>
           <p class="text-[10px] text-slate-400 mt-1">Supports standard CSV with Campaign Name and Links</p>
@@ -484,7 +484,7 @@
         <div class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-[#2F3136]">
           <button
             @click="smmStore.downloadSampleTemplate()"
-            class="text-xs text-purple-600 dark:text-purple-400 font-bold hover:underline"
+            class="text-xs theme-text font-bold hover:underline"
           >
             Download Template
           </button>
@@ -498,7 +498,7 @@
             <button
               @click="handleImportCsv"
               :disabled="!selectedCsvFile || importing"
-              class="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-md transition-all"
+              class="px-4 py-2 theme-gradient-bg hover:opacity-90 disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-md transition-all"
             >
               {{ importing ? 'Importing Rows...' : 'Import to Sheet' }}
             </button>
@@ -567,7 +567,7 @@ function getPlatformBadge(platform) {
     case 'google_ads':
       return { icon: '🎯', bg: 'bg-emerald-600' };
     default:
-      return { icon: '🔗', bg: 'bg-purple-600' };
+      return { icon: '🔗', bg: 'bg-slate-700' };
   }
 }
 

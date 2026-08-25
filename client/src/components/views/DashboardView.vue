@@ -13,7 +13,7 @@
 
       <button
         @click="taskStore.fetchAnalytics()"
-        class="text-xs text-purple-600 dark:text-purple-400 font-semibold hover:underline flex items-center space-x-1"
+        class="text-xs theme-text font-semibold hover:underline flex items-center space-x-1"
       >
         <RefreshCw class="w-3.5 h-3.5" />
         <span>Refresh Metrics</span>
@@ -22,46 +22,46 @@
 
     <!-- Summary KPI Stat Cards -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      <div class="bg-white dark:bg-[#202225] p-4 rounded-xl border border-slate-200 dark:border-[#2F3136] shadow-sm flex items-center justify-between">
+      <div class="bg-white dark:bg-[#202225] p-4 rounded-2xl border border-slate-200 dark:border-[#2F3136] shadow-sm flex items-center justify-between">
         <div>
           <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Tasks</p>
           <h3 class="text-2xl font-black text-slate-900 dark:text-white mt-1">{{ summary.total_tasks || 0 }}</h3>
           <p class="text-[11px] text-slate-500 mt-1">{{ summary.total_spaces || 0 }} Spaces Active</p>
         </div>
-        <div class="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+        <div class="w-10 h-10 rounded-2xl theme-light-bg theme-text flex items-center justify-center">
           <Layers class="w-5 h-5" />
         </div>
       </div>
 
-      <div class="bg-white dark:bg-[#202225] p-4 rounded-xl border border-slate-200 dark:border-[#2F3136] shadow-sm flex items-center justify-between">
+      <div class="bg-white dark:bg-[#202225] p-4 rounded-2xl border border-slate-200 dark:border-[#2F3136] shadow-sm flex items-center justify-between">
         <div>
           <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Completion Rate</p>
           <h3 class="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">{{ summary.completion_rate || 0 }}%</h3>
           <p class="text-[11px] text-slate-500 mt-1">{{ summary.completed_tasks || 0 }} tasks resolved</p>
         </div>
-        <div class="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+        <div class="w-10 h-10 rounded-2xl bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
           <CheckCircle2 class="w-5 h-5" />
         </div>
       </div>
 
-      <div class="bg-white dark:bg-[#202225] p-4 rounded-xl border border-slate-200 dark:border-[#2F3136] shadow-sm flex items-center justify-between">
+      <div class="bg-white dark:bg-[#202225] p-4 rounded-2xl border border-slate-200 dark:border-[#2F3136] shadow-sm flex items-center justify-between">
         <div>
           <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">In Progress</p>
           <h3 class="text-2xl font-black text-blue-600 dark:text-blue-400 mt-1">{{ summary.in_progress_tasks || 0 }}</h3>
           <p class="text-[11px] text-slate-500 mt-1">{{ summary.pending_tasks || 0 }} pending start</p>
         </div>
-        <div class="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+        <div class="w-10 h-10 rounded-2xl bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 flex items-center justify-center">
           <PlayCircle class="w-5 h-5" />
         </div>
       </div>
 
-      <div class="bg-white dark:bg-[#202225] p-4 rounded-xl border border-slate-200 dark:border-[#2F3136] shadow-sm flex items-center justify-between">
+      <div class="bg-white dark:bg-[#202225] p-4 rounded-2xl border border-slate-200 dark:border-[#2F3136] shadow-sm flex items-center justify-between">
         <div>
           <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Overdue Alerts</p>
           <h3 class="text-2xl font-black text-red-600 dark:text-red-400 mt-1">{{ summary.overdue_tasks || 0 }}</h3>
           <p class="text-[11px] text-red-500 font-semibold mt-1">Requires attention</p>
         </div>
-        <div class="w-10 h-10 rounded-xl bg-red-100 dark:bg-red-950 text-red-600 dark:text-red-400 flex items-center justify-center">
+        <div class="w-10 h-10 rounded-2xl bg-red-100 dark:bg-red-950 text-red-600 dark:text-red-400 flex items-center justify-center">
           <AlertCircle class="w-5 h-5" />
         </div>
       </div>
@@ -70,9 +70,9 @@
     <!-- Main Grid: Employee Workload & Upcoming Deadlines -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <!-- Employee Workload Table -->
-      <div class="lg:col-span-2 bg-white dark:bg-[#202225] rounded-xl border border-slate-200 dark:border-[#2F3136] shadow-sm p-5 space-y-4">
+      <div class="lg:col-span-2 bg-white dark:bg-[#202225] rounded-2xl border border-slate-200 dark:border-[#2F3136] shadow-sm p-5 space-y-4">
         <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center space-x-2">
-          <Users class="w-4 h-4 text-purple-500" />
+          <Users class="w-4 h-4 theme-text" />
           <span>{{ authStore.isSuperAdmin || authStore.isManager ? 'Employee Workload & Task Distribution' : 'My Workload & Completion Status' }}</span>
         </h3>
 
@@ -123,9 +123,9 @@
       </div>
 
       <!-- Upcoming Deadlines Card -->
-      <div class="bg-white dark:bg-[#202225] rounded-xl border border-slate-200 dark:border-[#2F3136] shadow-sm p-5 space-y-4">
+      <div class="bg-white dark:bg-[#202225] rounded-2xl border border-slate-200 dark:border-[#2F3136] shadow-sm p-5 space-y-4">
         <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center space-x-2">
-          <Calendar class="w-4 h-4 text-purple-500" />
+          <Calendar class="w-4 h-4 theme-text" />
           <span>Upcoming Deadlines</span>
         </h3>
 
@@ -134,22 +134,20 @@
             v-for="task in (taskStore.analytics?.upcoming_deadlines || [])"
             :key="task._id || task.id"
             @click="taskStore.openTaskModal(task)"
-            class="p-2.5 rounded-lg bg-slate-50 dark:bg-[#1e2023] hover:bg-purple-50 dark:hover:bg-[#292B2F] cursor-pointer transition-colors border border-slate-100 dark:border-[#2F3136]"
+            class="p-2.5 rounded-xl bg-slate-50 dark:bg-[#1e2023] hover:bg-slate-100 dark:hover:bg-[#292B2F] cursor-pointer transition-colors border border-slate-100 dark:border-[#2F3136]"
           >
             <div class="flex items-center justify-between">
               <p class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate pr-2">{{ task.title }}</p>
-              <span class="text-[10px] font-bold text-purple-600 dark:text-purple-400 shrink-0">
-                {{ task.dueDate }}
-              </span>
+              <span class="text-[10px] font-bold text-slate-500 shrink-0">{{ task.dueDate }}</span>
             </div>
-            <p class="text-[10px] text-slate-400 mt-1 capitalize">{{ task.priority }} Priority • {{ task.status?.replace('_', ' ') }}</p>
+            <div class="flex items-center justify-between mt-1.5 text-[10px] text-slate-400">
+              <span class="capitalize">{{ task.priority }} priority</span>
+              <span class="capitalize font-semibold text-purple-400">{{ task.status.replace('_', ' ') }}</span>
+            </div>
           </div>
 
-          <div
-            v-if="!(taskStore.analytics?.upcoming_deadlines?.length)"
-            class="py-8 text-center text-xs text-slate-400 italic"
-          >
-            No upcoming deadlines in the next 7 days
+          <div v-if="!(taskStore.analytics?.upcoming_deadlines?.length)" class="py-6 text-center text-xs text-slate-400">
+            No upcoming deadlines
           </div>
         </div>
       </div>
@@ -160,7 +158,7 @@
 <script setup>
 import { computed, onMounted } from 'vue';
 import { 
-  RefreshCw, Layers, CheckCircle2, PlayCircle, AlertCircle, Users, Calendar 
+  Layers, CheckCircle2, PlayCircle, AlertCircle, Users, Calendar, RefreshCw 
 } from 'lucide-vue-next';
 import UserAvatar from '@/components/common/UserAvatar.vue';
 import { useTaskStore } from '@/stores/taskStore';
@@ -169,9 +167,24 @@ import { useAuthStore } from '@/stores/authStore';
 const taskStore = useTaskStore();
 const authStore = useAuthStore();
 
-const summary = computed(() => taskStore.analytics?.summary || {});
+onMounted(async () => {
+  await taskStore.fetchAnalytics();
+});
 
-onMounted(() => {
-  taskStore.fetchAnalytics();
+const summary = computed(() => {
+  return taskStore.analytics?.summary || {
+    total_tasks: taskStore.tasks.length,
+    completed_tasks: taskStore.tasks.filter(t => t.status === 'completed').length,
+    in_progress_tasks: taskStore.tasks.filter(t => t.status === 'in_progress').length,
+    pending_tasks: taskStore.tasks.filter(t => t.status === 'pending').length,
+    overdue_tasks: taskStore.tasks.filter(t => {
+      if (!t.dueDate || t.status === 'completed') return false;
+      return t.dueDate < new Date().toISOString().split('T')[0];
+    }).length,
+    completion_rate: taskStore.tasks.length > 0
+      ? Math.round((taskStore.tasks.filter(t => t.status === 'completed').length / taskStore.tasks.length) * 100)
+      : 0,
+    total_spaces: taskStore.spaces.length
+  };
 });
 </script>
