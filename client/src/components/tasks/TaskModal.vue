@@ -379,11 +379,13 @@ import {
 import UserAvatar from '@/components/common/UserAvatar.vue';
 import { useTaskStore } from '@/stores/taskStore';
 import { useAuthStore } from '@/stores/authStore';
+import { useUiStore } from '@/stores/uiStore';
 import axios from 'axios';
 import { formatDistanceToNow } from 'date-fns';
 
 const taskStore = useTaskStore();
 const authStore = useAuthStore();
+const uiStore = useUiStore();
 
 const task = computed(() => taskStore.activeTask);
 
@@ -516,10 +518,11 @@ async function handleAddSubtask() {
       title: newSubtaskTitle.value.trim(),
       user_id: authStore.currentUser?._id || authStore.currentUser?.id
     });
+    uiStore.success('Subtask added');
     newSubtaskTitle.value = '';
     taskStore.fetchTaskDetails(task.value._id || task.value.id);
   } catch (err) {
-    alert('Failed to add subtask: ' + err.message);
+    uiStore.error('Failed to add subtask: ' + err.message);
   }
 }
 
@@ -531,16 +534,17 @@ async function handleToggleSubtask(sub) {
     });
     taskStore.fetchTaskDetails(task.value._id || task.value.id);
   } catch (err) {
-    alert('Failed to toggle subtask: ' + err.message);
+    uiStore.error('Failed to toggle subtask: ' + err.message);
   }
 }
 
 async function handleDeleteSubtask(subId) {
   try {
     await axios.delete(`/api/subtasks/${subId}`);
+    uiStore.info('Subtask deleted');
     taskStore.fetchTaskDetails(task.value._id || task.value.id);
   } catch (err) {
-    alert('Failed to delete subtask');
+    uiStore.error('Failed to delete subtask');
   }
 }
 
@@ -551,17 +555,31 @@ async function handlePostComment() {
       content: newCommentText.value.trim(),
       user_id: authStore.currentUser?._id || authStore.currentUser?.id
     });
+    uiStore.success('Comment posted and team notified via email');
     newCommentText.value = '';
     await fetchComments();
     await fetchActivity();
   } catch (err) {
-    alert('Failed to post comment: ' + err.message);
+    uiStore.error('Failed to post comment: ' + err.message);
   }
 }
 
 async function confirmDeleteTask() {
-  if (confirm(`Are you sure you want to delete task "${task.value.title}"?`)) {
-    await taskStore.deleteTask(task.value._id || task.value.id);
+  const confirmed = await uiStore.confirm({
+    title: 'Delete Task',
+    message: `Are you sure you want to permanently delete task "${task.value.title}"?`,
+    confirmText: 'Delete Task',
+    isDanger: true
+  });
+
+  if (confirmed) {
+    try {
+      await taskStore.deleteTask(task.value._id || task.value.id);
+      uiStore.success(`Task "${task.value?.title || 'Task'}" deleted`);
+      taskStore.closeTaskModal();
+    } catch (err) {
+      uiStore.error('Failed to delete task: ' + err.message);
+    }
   }
 }
 

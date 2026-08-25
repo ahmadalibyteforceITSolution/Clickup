@@ -158,6 +158,7 @@ import { X, User as UserIcon, Camera, Upload, Trash2 } from 'lucide-vue-next';
 import UserAvatar from '@/components/common/UserAvatar.vue';
 import { useAuthStore } from '@/stores/authStore';
 import { useTaskStore } from '@/stores/taskStore';
+import { useUiStore } from '@/stores/uiStore';
 import axios from 'axios';
 
 const props = defineProps({
@@ -169,6 +170,7 @@ const emit = defineEmits(['close']);
 
 const authStore = useAuthStore();
 const taskStore = useTaskStore();
+const uiStore = useUiStore();
 
 const fileInputRef = ref(null);
 const previewAvatar = ref(null);
@@ -256,9 +258,10 @@ async function handleSaveProfile() {
 
     await authStore.updateProfile(userId, payload);
     await taskStore.fetchTasks();
+    uiStore.success('Profile saved successfully');
     close();
   } catch (err) {
-    alert('Failed to update profile: ' + (err.response?.data?.error || err.message));
+    uiStore.error('Failed to update profile: ' + (err.response?.data?.error || err.message));
   } finally {
     saving.value = false;
   }
@@ -267,14 +270,22 @@ async function handleSaveProfile() {
 async function handleDeleteUser() {
   if (!props.targetUser) return;
   const userName = props.targetUser.name;
-  if (confirm(`Are you sure you want to permanently delete user "${userName}"?`)) {
+  const confirmed = await uiStore.confirm({
+    title: 'Delete Team Member',
+    message: `Are you sure you want to permanently delete user "${userName}"? This cannot be undone.`,
+    confirmText: 'Delete User',
+    isDanger: true
+  });
+
+  if (confirmed) {
     try {
       const userId = props.targetUser._id || props.targetUser.id;
       await authStore.deleteUser(userId);
       await taskStore.fetchTasks();
+      uiStore.success(`User "${userName}" deleted`);
       close();
     } catch (err) {
-      alert('Failed to delete user: ' + err.message);
+      uiStore.error('Failed to delete user: ' + err.message);
     }
   }
 }

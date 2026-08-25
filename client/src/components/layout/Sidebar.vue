@@ -399,9 +399,11 @@ import UserAvatar from '@/components/common/UserAvatar.vue';
 import EditProfileModal from '@/components/settings/EditProfileModal.vue';
 import { useAuthStore } from '@/stores/authStore';
 import { useTaskStore } from '@/stores/taskStore';
+import { useUiStore } from '@/stores/uiStore';
 
 const authStore = useAuthStore();
 const taskStore = useTaskStore();
+const uiStore = useUiStore();
 
 const viewOptions = [
   { id: 'list', label: 'List View', icon: List },
@@ -466,10 +468,11 @@ async function handleCreateSpace() {
       color: selectedSpaceColor.value,
       created_by: authStore.currentUser?._id || authStore.currentUser?.id
     });
+    uiStore.success(`Space "${newSpaceName.value.trim()}" created`);
     createSpaceModalOpen.value = false;
     newSpaceName.value = '';
   } catch (err) {
-    alert('Error creating space: ' + err.message);
+    uiStore.error('Error creating space: ' + err.message);
   }
 }
 
@@ -484,10 +487,11 @@ async function handleCreateList() {
   if (!newListName.value.trim() || !targetSpaceId.value) return;
   try {
     await taskStore.createList(targetSpaceId.value, { name: newListName.value.trim() });
+    uiStore.success(`List "${newListName.value.trim()}" added to ${targetSpaceName.value}`);
     createListModalOpen.value = false;
     newListName.value = '';
   } catch (err) {
-    alert('Error creating list: ' + err.message);
+    uiStore.error('Error creating list: ' + err.message);
   }
 }
 

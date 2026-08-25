@@ -57,7 +57,18 @@ export const useTaskStore = defineStore('tasks', {
 
     filteredTasks: (state) => {
       const taskList = Array.isArray(state.tasks) ? state.tasks : [];
-      return taskList.filter(task => {
+      const seenIds = new Set();
+      const uniqueTasks = [];
+
+      taskList.forEach(task => {
+        const id = String(task._id || task.id);
+        if (!seenIds.has(id)) {
+          seenIds.add(id);
+          uniqueTasks.push(task);
+        }
+      });
+
+      return uniqueTasks.filter(task => {
         const taskSpaceId = String(task.spaceId?._id || task.spaceId || task.space_id?._id || task.space_id || '');
         const taskListId = String(task.listId?._id || task.listId || task.list_id?._id || task.list_id || '');
 
@@ -238,7 +249,6 @@ export const useTaskStore = defineStore('tasks', {
           this.selectedTask = res.data;
         }
         await this.fetchTasks();
-        await this.fetchSpaces();
         return res.data;
       } catch (err) {
         throw new Error(err.response?.data?.error || err.message);

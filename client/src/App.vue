@@ -1,5 +1,8 @@
 <template>
   <div class="h-screen w-screen flex overflow-hidden bg-slate-50 dark:bg-[#18191B]">
+    <!-- Global Request Loading Bar -->
+    <GlobalLoader />
+
     <!-- Left ClickUp Sidebar -->
     <Sidebar />
 
@@ -24,6 +27,9 @@
     <EmailOutboxModal />
     <SettingsModal />
     <AuthModal />
+
+    <!-- Global Floating Toast Notification Container (Zero Alert System) -->
+    <GlobalToastContainer />
   </div>
 </template>
 
@@ -41,6 +47,8 @@ import CreateTaskModal from '@/components/tasks/CreateTaskModal.vue';
 import EmailOutboxModal from '@/components/email/EmailOutboxModal.vue';
 import SettingsModal from '@/components/settings/SettingsModal.vue';
 import AuthModal from '@/components/auth/AuthModal.vue';
+import GlobalLoader from '@/components/common/GlobalLoader.vue';
+import GlobalToastContainer from '@/components/common/GlobalToastContainer.vue';
 
 import { useAuthStore } from '@/stores/authStore';
 import { useTaskStore } from '@/stores/taskStore';
@@ -58,7 +66,6 @@ onMounted(async () => {
   if (authStore.currentUser) {
     await notifStore.fetchNotifications(authStore.currentUser._id || authStore.currentUser.id);
   } else if (authStore.users.length === 0) {
-    // If no users exist, open registration modal for first owner
     authStore.authModalOpen = true;
     authStore.authMode = 'register';
   }

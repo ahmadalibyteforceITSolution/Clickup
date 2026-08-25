@@ -2,6 +2,8 @@ import express from 'express';
 import Task from '../models/Task.js';
 import User from '../models/User.js';
 import Space from '../models/Space.js';
+import Notification from '../models/Notification.js';
+import ActivityLog from '../models/ActivityLog.js';
 
 const router = express.Router();
 
@@ -95,6 +97,56 @@ router.get('/', async (req, res) => {
     });
   } catch (error) {
     console.error('Analytics error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Notifications for user
+router.get('/notifications/:userId', async (req, res) => {
+  try {
+    const notifications = await Notification.find({ userId: req.params.userId })
+      .sort({ createdAt: -1 })
+      .limit(30);
+
+    const unreadCount = await Notification.countDocuments({ 
+      userId: req.params.userId, 
+      isRead: false 
+    });
+
+    const formatted = notifications.map(n => ({
+      ...n.toObject(),
+      id: n._id,
+      is_read: n.isRead ? 1 : 0,
+      created_at: n.createdAt
+    }));
+
+    res.json({ notifications: formatted, unreadCount });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Mark all notifications read
+router.post('/notifications/:userId/read-all', async (req, res) => {
+  try {
+    await Notification.updateMany(
+      { userId: req.params.userId, isRead: false },
+      { isRead: true }
+    );
+    res.json({ success: true, message: 'All notifications marked as read' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Activity logs
+router.get('/activity', async (req, res) => {
+  try {
+    const { task_id } = req.query;
+    const filter = task_id ? { taskId: task_id } : {};
+    const logs = await ActivityLog.find(filter).sort({ createdAt: -1 }).limit(30);
+    res.json(logs);
+  } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });

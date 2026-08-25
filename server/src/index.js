@@ -16,6 +16,7 @@ import subtasksRouter from './routes/subtasks.js';
 import attachmentsRouter from './routes/attachments.js';
 import analyticsRouter from './routes/analytics.js';
 import emailsRouter from './routes/emails.js';
+import notificationsRouter from './routes/notifications.js';
 
 dotenv.config();
 
@@ -65,6 +66,7 @@ app.use('/api/subtasks', subtasksRouter);
 app.use('/api/attachments', attachmentsRouter);
 app.use('/api/analytics', analyticsRouter);
 app.use('/api/emails', emailsRouter);
+app.use('/api/notifications', notificationsRouter);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

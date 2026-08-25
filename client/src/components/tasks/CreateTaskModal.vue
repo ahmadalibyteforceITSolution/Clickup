@@ -51,13 +51,6 @@
           <div>
             <div class="flex items-center justify-between mb-1">
               <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">Target List *</label>
-              <button
-                type="button"
-                @click="promptQuickCreateList"
-                class="text-[10px] font-bold text-purple-600 dark:text-purple-400 hover:underline"
-              >
-                + New List
-              </button>
             </div>
 
             <!-- List Dropdown (Grouped by Space) -->
@@ -82,16 +75,13 @@
               </optgroup>
             </select>
 
-            <!-- Fallback button when no space or list exists yet -->
-            <button
+            <!-- Fallback state when no space or list exists yet -->
+            <div
               v-else
-              type="button"
-              @click="promptQuickCreateList"
-              class="w-full py-2 px-3 border border-dashed border-purple-400 bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-300 text-xs font-bold rounded-xl text-left flex items-center justify-between"
+              class="w-full py-2 px-3 border border-dashed border-slate-300 bg-slate-50 dark:bg-[#18191B] text-slate-500 text-xs font-semibold rounded-xl text-left"
             >
-              <span>+ Create First Space & List</span>
-              <span class="text-[10px] bg-purple-600 text-white px-2 py-0.5 rounded">Setup</span>
-            </button>
+              Please create a Space & List first in the sidebar.
+            </div>
           </div>
 
           <div>
@@ -162,10 +152,10 @@
             </button>
             <button
               type="submit"
-              :disabled="!form.title.trim() || !form.list_id"
+              :disabled="!form.title.trim() || !form.list_id || isSubmitting"
               class="px-5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-md shadow-purple-500/20 transition-all active:scale-95"
             >
-              Create & Assign
+              {{ isSubmitting ? 'Creating...' : 'Create & Assign' }}
             </button>
           </div>
         </div>
@@ -179,11 +169,14 @@ import { reactive, ref, computed, watch } from 'vue';
 import { X } from 'lucide-vue-next';
 import { useTaskStore } from '@/stores/taskStore';
 import { useAuthStore } from '@/stores/authStore';
+import { useUiStore } from '@/stores/uiStore';
 
 const taskStore = useTaskStore();
 const authStore = useAuthStore();
+const uiStore = useUiStore();
 
 const selectedAssigneeId = ref('');
+const isSubmitting = ref(false);
 
 const form = reactive({
   title: '',
@@ -210,32 +203,10 @@ watch(() => taskStore.createTaskModalOpen, (open) => {
   }
 });
 
-async function promptQuickCreateList() {
-  let spaceId = taskStore.selectedSpaceId;
-  if (!spaceId && taskStore.spaces.length > 0) {
-    spaceId = taskStore.spaces[0]._id || taskStore.spaces[0].id;
-  }
-
-  if (!spaceId) {
-    // Create first space first
-    const spaceName = prompt('Enter New Space Name (e.g. General, Engineering):');
-    if (!spaceName || !spaceName.trim()) return;
-    const newSpace = await taskStore.createSpace({
-      name: spaceName.trim(),
-      created_by: authStore.currentUser?._id || authStore.currentUser?.id
-    });
-    spaceId = newSpace._id || newSpace.id;
-  }
-
-  const listName = prompt('Enter New List Name (e.g. Tasks, Backlog, Sprint 1):');
-  if (!listName || !listName.trim()) return;
-
-  const newList = await taskStore.createList(spaceId, { name: listName.trim() });
-  form.list_id = newList._id || newList.id;
-}
-
 async function handleSubmit() {
-  if (!form.title.trim() || !form.list_id) return;
+  if (!form.title.trim() || !form.list_id || isSubmitting.value) return;
+
+  isSubmitting.value = true;
 
   const payload = {
     title: form.title.trim(),
@@ -255,9 +226,12 @@ async function handleSubmit() {
     form.title = '';
     form.description = '';
     selectedAssigneeId.value = '';
+    uiStore.success(`Task "${payload.title}" created and assigned!`);
     taskStore.openTaskModal(created._id || created.id || created);
   } catch (err) {
-    alert('Failed to create task: ' + err.message);
+    uiStore.error('Failed to create task: ' + err.message);
+  } finally {
+    isSubmitting.value = false;
   }
 }
 </script>

@@ -13,6 +13,7 @@ import subtasksRouter from '../server/src/routes/subtasks.js';
 import attachmentsRouter from '../server/src/routes/attachments.js';
 import analyticsRouter from '../server/src/routes/analytics.js';
 import emailsRouter from '../server/src/routes/emails.js';
+import notificationsRouter from '../server/src/routes/notifications.js';
 
 dotenv.config();
 
@@ -26,7 +27,7 @@ app.use(cors({
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Health check endpoint (Always returns 200)
+// Health check endpoint
 app.get('/api/health', (req, res) => res.status(200).json({ status: 'ok', time: new Date().toISOString() }));
 app.get('/health', (req, res) => res.status(200).json({ status: 'ok', time: new Date().toISOString() }));
 
@@ -57,6 +58,9 @@ app.use('/analytics', analyticsRouter);
 
 app.use('/api/emails', emailsRouter);
 app.use('/emails', emailsRouter);
+
+app.use('/api/notifications', notificationsRouter);
+app.use('/notifications', notificationsRouter);
 
 // Global error handler
 app.use((err, req, res, next) => {
