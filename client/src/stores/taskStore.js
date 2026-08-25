@@ -156,7 +156,13 @@ export const useTaskStore = defineStore('tasks', {
 
     async fetchSpaces() {
       try {
-        const res = await axios.get('/api/spaces');
+        const authStore = useAuthStore();
+        const params = {};
+        if (authStore.currentUser) {
+          params.user_role = authStore.currentUser.role;
+          params.user_id = authStore.currentUser._id || authStore.currentUser.id;
+        }
+        const res = await axios.get('/api/spaces', { params });
         this.spaces = Array.isArray(res.data) ? res.data : [];
       } catch (err) {
         this.spaces = [];
@@ -232,6 +238,7 @@ export const useTaskStore = defineStore('tasks', {
           this.selectedTask = res.data;
         }
         await this.fetchTasks();
+        await this.fetchSpaces();
         return res.data;
       } catch (err) {
         throw new Error(err.response?.data?.error || err.message);

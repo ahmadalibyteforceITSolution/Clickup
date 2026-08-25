@@ -1,20 +1,32 @@
 import express from 'express';
+import mongoose from 'mongoose';
 import Space from '../models/Space.js';
 import List from '../models/List.js';
 import Task from '../models/Task.js';
 
 const router = express.Router();
 
-// Get all spaces with their nested folders and lists + task counts
+// Get all spaces with their nested folders and lists + role-filtered task counts
 router.get('/', async (req, res) => {
   try {
+    const { user_role, user_id } = req.query;
+    const isEmployee = user_role === 'employee' && user_id;
+
+    // Filter task count based on user role
+    const taskMatchFilter = {};
+    if (isEmployee) {
+      taskMatchFilter.assignees = new mongoose.Types.ObjectId(user_id);
+    }
+
     const spaces = await Space.find().populate('createdBy', 'name email avatar role').sort({ name: 1 });
     const lists = await List.find().sort({ name: 1 });
 
-    // Count tasks per list
+    // Count tasks per list matching user role
     const taskCounts = await Task.aggregate([
+      { $match: taskMatchFilter },
       { $group: { _id: '$listId', count: { $sum: 1 } } }
     ]);
+
     const countMap = {};
     taskCounts.forEach(tc => {
       countMap[String(tc._id)] = tc.count;
