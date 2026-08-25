@@ -20,10 +20,10 @@
         </div>
 
         <h3 class="text-xl font-black tracking-tight">
-          {{ authStore.authMode === 'verify' ? 'Verify Your Email' : (authStore.authMode === 'register' ? 'Join Your Team' : 'Sign in to ClickUp') }}
+          {{ authStore.authMode === 'verify' ? 'Verify Your Email' : (authStore.authMode === 'register' ? 'Create Employee Account' : 'Sign in to ClickUp') }}
         </h3>
         <p class="text-xs text-white/80 mt-1">
-          {{ authStore.authMode === 'verify' ? 'Enter the 6-digit code sent to your inbox' : 'Enterprise Task Management & Real-time Collaboration' }}
+          {{ authStore.authMode === 'verify' ? 'Enter the 6-digit code sent to your inbox' : 'Enterprise Task Management & Team Workspace' }}
         </p>
       </div>
 
@@ -125,7 +125,7 @@
           </button>
         </form>
 
-        <!-- 2. REGISTRATION FORM -->
+        <!-- 2. REGISTRATION FORM (Default to Employee) -->
         <form v-else-if="authStore.authMode === 'register'" @submit.prevent="handleRegister" class="space-y-3">
           <div>
             <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">Full Name *</label>
@@ -139,7 +139,7 @@
           </div>
 
           <div>
-            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">Company Email *</label>
+            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">Email Address *</label>
             <input
               v-model="regForm.email"
               type="email"
@@ -173,27 +173,14 @@
             </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-2">
-            <div>
-              <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">Role</label>
-              <select
-                v-model="regForm.role"
-                class="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none font-semibold"
-              >
-                <option value="super_admin">Super Admin / Owner</option>
-                <option value="manager">Manager</option>
-                <option value="employee">Employee</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">Department</label>
-              <input
-                v-model="regForm.department"
-                type="text"
-                placeholder="Engineering"
-                class="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] rounded-xl text-slate-900 dark:text-white focus:outline-none"
-              />
-            </div>
+          <div>
+            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">Department</label>
+            <input
+              v-model="regForm.department"
+              type="text"
+              placeholder="Engineering, Design, Marketing..."
+              class="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] rounded-xl text-slate-900 dark:text-white focus:outline-none"
+            />
           </div>
 
           <button
@@ -302,7 +289,7 @@ const regForm = reactive({
   name: '',
   email: '',
   password: '',
-  role: 'super_admin',
+  role: 'employee',
   department: 'Engineering'
 });
 
@@ -323,6 +310,8 @@ async function handleRegister() {
   errorMessage.value = '';
   successMessage.value = '';
   try {
+    // Ensure all registered accounts are employees by default
+    regForm.role = 'employee';
     const res = await authStore.register(regForm);
     successMessage.value = res.message || 'Verification code sent to your email!';
   } catch (err) {
