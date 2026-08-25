@@ -6,6 +6,7 @@ import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { connectDB } from './db/connection.js';
 
+import authRouter from './routes/auth.js';
 import usersRouter from './routes/users.js';
 import spacesRouter from './routes/spaces.js';
 import tasksRouter from './routes/tasks.js';
@@ -41,6 +42,7 @@ const uploadsDir = path.join(__dirname, '../uploads');
 app.use('/uploads', express.static(uploadsDir));
 
 // API Routes
+app.use('/api/auth', authRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/spaces', spacesRouter);
 app.use('/api/tasks', tasksRouter);

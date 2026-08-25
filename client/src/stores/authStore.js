@@ -6,7 +6,10 @@ export const useAuthStore = defineStore('auth', {
     currentUser: null,
     users: [],
     loading: false,
-    error: null
+    error: null,
+    authModalOpen: false,
+    authMode: 'login', // 'login' | 'register' | 'verify'
+    unverifiedEmail: ''
   }),
 
   getters: {
@@ -31,7 +34,6 @@ export const useAuthStore = defineStore('auth', {
         const res = await axios.get('/api/users');
         this.users = res.data;
 
-        // Default to first Manager or Super Admin if not selected yet
         if (!this.currentUser && this.users.length > 0) {
           this.currentUser = this.users[0];
         }
@@ -46,14 +48,73 @@ export const useAuthStore = defineStore('auth', {
       this.currentUser = user;
     },
 
-    async createUser(userData) {
+    async register(userData) {
+      this.loading = true;
+      this.error = null;
       try {
-        const res = await axios.post('/api/users', userData);
-        this.users.push(res.data);
+        const res = await axios.post('/api/auth/register', userData);
+        this.unverifiedEmail = userData.email;
+        this.authMode = 'verify';
+        return res.data;
+      } catch (err) {
+        this.error = err.response?.data?.error || err.message;
+        throw new Error(this.error);
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async verifyEmail(email, code) {
+      this.loading = true;
+      this.error = null;
+      try {
+        const res = await axios.post('/api/auth/verify-email', { email, code });
+        this.currentUser = res.data.user;
+        this.authModalOpen = false;
+        await this.fetchUsers();
+        return res.data;
+      } catch (err) {
+        this.error = err.response?.data?.error || err.message;
+        throw new Error(this.error);
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async resendVerificationCode(email) {
+      try {
+        const res = await axios.post('/api/auth/resend-code', { email });
         return res.data;
       } catch (err) {
         throw new Error(err.response?.data?.error || err.message);
       }
+    },
+
+    async login(email, password) {
+      this.loading = true;
+      this.error = null;
+      try {
+        const res = await axios.post('/api/auth/login', { email, password });
+        this.currentUser = res.data.user;
+        this.authModalOpen = false;
+        await this.fetchUsers();
+        return res.data;
+      } catch (err) {
+        if (err.response?.data?.requiresVerification) {
+          this.unverifiedEmail = email;
+          this.authMode = 'verify';
+        }
+        this.error = err.response?.data?.error || err.message;
+        throw new Error(this.error);
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    logout() {
+      this.currentUser = null;
+      this.authModalOpen = true;
+      this.authMode = 'login';
     }
   }
 });

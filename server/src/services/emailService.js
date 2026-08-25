@@ -60,7 +60,7 @@ function createEmailTemplate({ title, badgeText, badgeColor = '#7b68ee', content
   <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; color: #1e293b;">
     <div style="max-width: 600px; margin: 30px auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.06); border: 1px solid #e2e8f0;">
       
-      <!-- ClickUp Gradient Header -->
+      <!-- ClickUp Header -->
       <div style="background: linear-gradient(135deg, #7b68ee 0%, #ff007f 100%); padding: 24px 30px; color: #ffffff;">
         <table width="100%" cellpadding="0" cellspacing="0" border="0">
           <tr>
@@ -99,8 +99,8 @@ function createEmailTemplate({ title, badgeText, badgeColor = '#7b68ee', content
 
       <!-- Footer -->
       <div style="background: #f1f5f9; padding: 18px 30px; text-align: center; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8;">
-        <p style="margin: 0 0 6px 0;">This is an automated notification from your ClickUp Workspace powered by MongoDB.</p>
-        <p style="margin: 0;">Manage your notification settings in ClickUp Preferences.</p>
+        <p style="margin: 0 0 6px 0;">This is an automated security & notification service for ClickUp.</p>
+        <p style="margin: 0;">If you did not request this email, please ignore it.</p>
       </div>
     </div>
   </body>
@@ -146,6 +146,49 @@ export async function sendEmail({ toEmail, toName, subject, html, triggerType, t
     }
     return { success: false, error: error.message };
   }
+}
+
+/**
+ * Send Email Verification Code OTP
+ */
+export async function notifyEmailVerification({ user, verificationCode }) {
+  const subject = `[ClickUp] Verify Your Email Address - Code: ${verificationCode}`;
+
+  const html = createEmailTemplate({
+    title: `Verify your ClickUp Account`,
+    badgeText: 'SECURITY',
+    badgeColor: '#10b981',
+    contentHtml: `
+      <p>Hello <strong>${user.name}</strong>,</p>
+      <p>Thank you for registering on ClickUp. Please use the following 6-digit verification code to confirm your email address and activate your account:</p>
+      
+      <div style="text-align: center; margin: 25px 0;">
+        <div style="display: inline-block; background: #f3f0ff; border: 2px dashed #7b68ee; border-radius: 12px; padding: 16px 36px;">
+          <span style="font-size: 32px; font-weight: 800; letter-spacing: 8px; color: #6d28d9; font-family: monospace;">${verificationCode}</span>
+        </div>
+        <p style="font-size: 12px; color: #64748b; margin-top: 8px;">This code will expire in 15 minutes.</p>
+      </div>
+
+      <p>Once verified, you will be able to access your team workspace, manage your assigned tasks, and collaborate in real-time.</p>
+    `,
+    metaItems: [
+      { label: 'Registered Email', value: user.email },
+      { label: 'Role Assigned', value: (user.role || 'employee').replace('_', ' ').toUpperCase() },
+      { label: 'Department', value: user.department || 'General' }
+    ],
+    actionBtn: {
+      text: 'Verify Account Now',
+      url: `http://localhost:5173/?verify_email=${encodeURIComponent(user.email)}&code=${verificationCode}`
+    }
+  });
+
+  return sendEmail({
+    toEmail: user.email,
+    toName: user.name,
+    subject,
+    html,
+    triggerType: 'manual_test'
+  });
 }
 
 export async function notifyTaskAssigned({ task, assignee, assignedBy }) {

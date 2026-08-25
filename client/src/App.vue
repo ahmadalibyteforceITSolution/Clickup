@@ -23,6 +23,7 @@
     <CreateTaskModal />
     <EmailOutboxModal />
     <SettingsModal />
+    <AuthModal />
   </div>
 </template>
 
@@ -39,6 +40,7 @@ import TaskModal from '@/components/tasks/TaskModal.vue';
 import CreateTaskModal from '@/components/tasks/CreateTaskModal.vue';
 import EmailOutboxModal from '@/components/email/EmailOutboxModal.vue';
 import SettingsModal from '@/components/settings/SettingsModal.vue';
+import AuthModal from '@/components/auth/AuthModal.vue';
 
 import { useAuthStore } from '@/stores/authStore';
 import { useTaskStore } from '@/stores/taskStore';

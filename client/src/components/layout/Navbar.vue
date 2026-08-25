@@ -116,7 +116,7 @@
         </div>
       </div>
 
-      <!-- Dark / Light Theme Toggle (In-memory reactive state) -->
+      <!-- Dark / Light Theme Toggle -->
       <button
         @click="toggleTheme"
         class="p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#292B2F] transition-colors"
@@ -126,7 +126,7 @@
         <Moon v-else class="w-4 h-4 text-slate-600" />
       </button>
 
-      <!-- Live User / Persona Switcher -->
+      <!-- Live User / Persona Switcher or Login button -->
       <div class="relative ml-2">
         <button
           @click="userMenuOpen = !userMenuOpen"
@@ -139,10 +139,10 @@
           />
           <div class="text-left hidden lg:block pr-1">
             <p class="text-xs font-bold text-slate-800 dark:text-slate-200 leading-tight">
-              {{ authStore.currentUser?.name || 'Select User' }}
+              {{ authStore.currentUser?.name || 'Sign In' }}
             </p>
             <p class="text-[10px] font-semibold uppercase tracking-wider text-purple-600 dark:text-purple-400">
-              {{ authStore.roleLabel }}
+              {{ authStore.roleLabel || 'Guest' }}
             </p>
           </div>
           <ChevronDown class="w-3.5 h-3.5 text-slate-400" />
@@ -153,9 +153,17 @@
           v-if="userMenuOpen"
           class="absolute right-0 mt-2 w-72 bg-white dark:bg-[#202225] rounded-xl shadow-2xl border border-slate-200 dark:border-[#2F3136] py-2 z-50 animate-fade-in"
         >
-          <div class="px-3 py-2 border-b border-slate-100 dark:border-[#2F3136]">
-            <p class="text-xs font-bold text-slate-700 dark:text-slate-300">Switch Active Persona</p>
-            <p class="text-[11px] text-slate-400">Test roles: Super Admin, Manager, Employee</p>
+          <div class="px-3 py-2 border-b border-slate-100 dark:border-[#2F3136] flex items-center justify-between">
+            <div>
+              <p class="text-xs font-bold text-slate-700 dark:text-slate-300">Active Persona</p>
+              <p class="text-[10px] text-slate-400">Click to switch or login</p>
+            </div>
+            <button
+              @click="authStore.authModalOpen = true; authStore.authMode = 'login'; userMenuOpen = false"
+              class="text-xs font-bold text-purple-600 dark:text-purple-400 hover:underline"
+            >
+              Sign In
+            </button>
           </div>
 
           <div class="max-h-64 overflow-y-auto py-1">
@@ -184,7 +192,15 @@
             </button>
           </div>
 
-          <div class="border-t border-slate-100 dark:border-[#2F3136] px-2 pt-2 mt-1">
+          <div class="border-t border-slate-100 dark:border-[#2F3136] px-2 pt-2 mt-1 space-y-1">
+            <button
+              @click="authStore.authModalOpen = true; authStore.authMode = 'register'; userMenuOpen = false"
+              class="w-full text-left px-2 py-1.5 text-xs text-purple-600 dark:text-purple-400 font-bold hover:bg-purple-50 dark:hover:bg-purple-950/30 rounded flex items-center space-x-2"
+            >
+              <UserPlus class="w-3.5 h-3.5" />
+              <span>Register New Account</span>
+            </button>
+
             <button
               @click="taskStore.settingsModalOpen = true; userMenuOpen = false"
               class="w-full text-left px-2 py-1.5 text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#292B2F] rounded flex items-center space-x-2"
@@ -202,7 +218,7 @@
 <script setup>
 import { ref } from 'vue';
 import { 
-  Search, X, Plus, Mail, Bell, Sun, Moon, ChevronDown, Clock, Settings 
+  Search, X, Plus, Mail, Bell, Sun, Moon, ChevronDown, Clock, Settings, UserPlus 
 } from 'lucide-vue-next';
 import { useAuthStore } from '@/stores/authStore';
 import { useTaskStore } from '@/stores/taskStore';
