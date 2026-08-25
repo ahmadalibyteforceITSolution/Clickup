@@ -1,30 +1,30 @@
 <template>
-  <div>
+  <div class="h-full flex shrink-0">
     <!-- Mobile Backdrop Overlay -->
     <div
       v-if="taskStore.sidebarMobileOpen"
-      class="fixed inset-0 bg-black/60 backdrop-blur-xs z-30 md:hidden animate-fade-in"
+      class="fixed inset-0 bg-black/60 backdrop-blur-xs z-40 md:hidden animate-fade-in"
       @click="taskStore.sidebarMobileOpen = false"
     ></div>
 
     <!-- Sidebar Container -->
     <aside
       :class="[
-        'bg-slate-900 text-slate-300 flex flex-col shrink-0 border-r border-slate-800 select-none transition-all duration-300 z-40',
+        'bg-[#0f172a] dark:bg-[#111827] text-slate-300 flex flex-col shrink-0 border-r border-slate-800/80 select-none transition-all duration-300 z-40 h-screen',
         'fixed md:static inset-y-0 left-0',
-        taskStore.sidebarMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
-        taskStore.sidebarCollapsed ? 'w-16' : 'w-64'
+        taskStore.sidebarMobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full md:translate-x-0',
+        taskStore.sidebarCollapsed ? 'w-16' : 'w-72'
       ]"
     >
       <!-- Workspace Brand Header -->
-      <div class="h-14 px-3.5 flex items-center justify-between border-b border-slate-800 bg-slate-950/40">
-        <div class="flex items-center space-x-2.5 overflow-hidden">
-          <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 via-pink-500 to-indigo-600 flex items-center justify-center text-white shrink-0 shadow-md shadow-purple-500/20">
+      <div class="h-16 px-4 flex items-center justify-between border-b border-slate-800/80 bg-slate-950/60 shrink-0">
+        <div class="flex items-center space-x-3 overflow-hidden">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 via-pink-500 to-indigo-600 flex items-center justify-center text-white shrink-0 shadow-lg shadow-purple-500/25">
             <Layers class="w-5 h-5" />
           </div>
-          <div v-if="!taskStore.sidebarCollapsed" class="truncate">
-            <span class="font-extrabold text-base tracking-tight text-white">Click<span class="text-purple-400">Up</span></span>
-            <span class="ml-1.5 text-[9px] bg-purple-900/60 text-purple-300 font-bold px-1.5 py-0.5 rounded uppercase">Workspace</span>
+          <div v-if="!taskStore.sidebarCollapsed" class="truncate flex items-center space-x-1.5">
+            <span class="font-black text-lg tracking-tight text-white">Click<span class="text-purple-400">Up</span></span>
+            <span class="text-[10px] bg-purple-900/60 text-purple-300 font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider">Workspace</span>
           </div>
         </div>
 
@@ -32,7 +32,7 @@
         <div class="flex items-center space-x-1">
           <button
             @click="taskStore.toggleSidebar"
-            class="hidden md:flex text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors"
+            class="hidden md:flex text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800/80 transition-colors"
             :title="taskStore.sidebarCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'"
           >
             <ChevronLeft v-if="!taskStore.sidebarCollapsed" class="w-4 h-4" />
@@ -42,18 +42,18 @@
           <!-- Mobile Close Button -->
           <button
             @click="taskStore.sidebarMobileOpen = false"
-            class="md:hidden text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800"
+            class="md:hidden text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800"
           >
-            <X class="w-4 h-4" />
+            <X class="w-5 h-5" />
           </button>
         </div>
       </div>
 
       <!-- Navigation Scrollable Body -->
-      <div class="flex-1 overflow-y-auto px-2 py-4 space-y-6">
+      <div class="flex-1 overflow-y-auto px-3 py-5 space-y-6 custom-scrollbar">
         <!-- Views Section -->
         <div>
-          <div v-if="!taskStore.sidebarCollapsed" class="px-2 mb-2 text-[11px] font-bold tracking-wider text-slate-400 uppercase">
+          <div v-if="!taskStore.sidebarCollapsed" class="px-2 mb-2 text-[11px] font-extrabold tracking-wider text-slate-400 uppercase">
             Views
           </div>
           <div class="space-y-1">
@@ -63,11 +63,11 @@
               @click="switchView(v.id)"
               :title="v.label"
               :class="[
-                'w-full flex items-center rounded-lg text-xs font-semibold transition-all',
-                taskStore.sidebarCollapsed ? 'justify-center p-2.5' : 'space-x-2.5 px-2.5 py-2',
+                'w-full flex items-center rounded-xl text-xs font-bold transition-all',
+                taskStore.sidebarCollapsed ? 'justify-center p-3' : 'space-x-3 px-3 py-2.5',
                 taskStore.activeView === v.id
-                  ? 'bg-purple-600 text-white shadow-sm shadow-purple-500/30'
-                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-500/30'
+                  : 'text-slate-300 hover:bg-slate-800/70 hover:text-white'
               ]"
             >
               <component :is="v.icon" class="w-4 h-4 shrink-0" />
@@ -79,13 +79,13 @@
         <!-- Spaces & Lists Section -->
         <div>
           <div v-if="!taskStore.sidebarCollapsed" class="px-2 mb-2 flex items-center justify-between">
-            <span class="text-[11px] font-bold tracking-wider text-slate-400 uppercase">Spaces</span>
+            <span class="text-[11px] font-extrabold tracking-wider text-slate-400 uppercase">Spaces</span>
             <button
               @click="openCreateSpaceModal"
-              class="text-slate-400 hover:text-purple-400 p-0.5 rounded transition-colors"
+              class="text-slate-400 hover:text-purple-400 p-1 rounded-lg hover:bg-slate-800/60 transition-colors"
               title="Create Space"
             >
-              <Plus class="w-3.5 h-3.5" />
+              <Plus class="w-4 h-4" />
             </button>
           </div>
 
@@ -94,43 +94,43 @@
             @click="selectSpace(null)"
             :title="'All Spaces (' + (taskStore.tasks?.length || 0) + ')'"
             :class="[
-              'w-full flex items-center rounded-md text-xs font-medium transition-colors mb-1',
-              taskStore.sidebarCollapsed ? 'justify-center p-2' : 'justify-between px-2.5 py-1.5',
+              'w-full flex items-center rounded-xl text-xs font-semibold transition-colors mb-1.5',
+              taskStore.sidebarCollapsed ? 'justify-center p-2.5' : 'justify-between px-3 py-2',
               !taskStore.selectedSpaceId
                 ? 'bg-slate-800 text-white font-bold'
-                : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'
+                : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
             ]"
           >
-            <div class="flex items-center space-x-2">
-              <LayoutGrid class="w-3.5 h-3.5 text-purple-400 shrink-0" />
+            <div class="flex items-center space-x-2.5">
+              <LayoutGrid class="w-4 h-4 text-purple-400 shrink-0" />
               <span v-if="!taskStore.sidebarCollapsed">All Spaces</span>
             </div>
-            <span v-if="!taskStore.sidebarCollapsed" class="text-[10px] bg-slate-800 text-slate-400 px-1.5 py-0.2 rounded-full">
+            <span v-if="!taskStore.sidebarCollapsed" class="text-[10px] bg-slate-800/80 text-slate-300 px-2 py-0.5 rounded-full font-bold">
               {{ taskStore.tasks?.length || 0 }}
             </span>
           </button>
 
           <!-- Space Accordions -->
-          <div class="space-y-1 mt-1">
+          <div class="space-y-1.5 mt-1">
             <div
               v-for="space in (taskStore.spaces || [])"
               :key="space._id || space.id"
-              class="rounded-lg overflow-hidden"
+              class="rounded-xl overflow-hidden"
             >
               <div
                 @click="selectSpace(space._id || space.id)"
                 :title="space.name"
                 :class="[
-                  'flex items-center cursor-pointer rounded-md text-xs font-semibold transition-colors group',
-                  taskStore.sidebarCollapsed ? 'justify-center p-2' : 'justify-between px-2.5 py-1.5',
+                  'flex items-center cursor-pointer rounded-xl text-xs font-semibold transition-colors group',
+                  taskStore.sidebarCollapsed ? 'justify-center p-2.5' : 'justify-between px-3 py-2',
                   taskStore.selectedSpaceId === (space._id || space.id)
                     ? 'bg-slate-800 text-white'
-                    : 'text-slate-300 hover:bg-slate-800/60 hover:text-white'
+                    : 'text-slate-300 hover:bg-slate-800/50 hover:text-white'
                 ]"
               >
-                <div class="flex items-center space-x-2 truncate">
+                <div class="flex items-center space-x-2.5 truncate">
                   <span
-                    class="w-2.5 h-2.5 rounded-full shrink-0"
+                    class="w-2.5 h-2.5 rounded-full shrink-0 ring-2 ring-white/10"
                     :style="{ backgroundColor: space.color || '#7b68ee' }"
                   ></span>
                   <span v-if="!taskStore.sidebarCollapsed" class="truncate">{{ space.name }}</span>
@@ -139,10 +139,10 @@
                 <div v-if="!taskStore.sidebarCollapsed" class="flex items-center space-x-1 shrink-0">
                   <button
                     @click.stop="openCreateListModal(space._id || space.id, space.name)"
-                    class="opacity-0 group-hover:opacity-100 hover:text-purple-400 p-0.5"
+                    class="opacity-0 group-hover:opacity-100 hover:text-purple-400 p-1 rounded hover:bg-slate-700/50"
                     title="Add List"
                   >
-                    <Plus class="w-3 h-3" />
+                    <Plus class="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
@@ -150,24 +150,24 @@
               <!-- Nested Lists (When sidebar is open) -->
               <div
                 v-if="!taskStore.sidebarCollapsed && space.lists && space.lists.length > 0"
-                class="pl-5 pr-1 py-1 space-y-0.5"
+                class="pl-5 pr-1 py-1 space-y-1"
               >
                 <button
                   v-for="list in space.lists"
                   :key="list._id || list.id"
                   @click="selectList(space._id || space.id, list._id || list.id)"
                   :class="[
-                    'w-full flex items-center justify-between px-2 py-1 rounded text-[11px] font-medium transition-colors',
+                    'w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-colors',
                     taskStore.selectedListId === (list._id || list.id)
-                      ? 'bg-purple-900/40 text-purple-300 font-bold border-l-2 border-purple-400 pl-1.5'
+                      ? 'bg-purple-900/50 text-purple-300 font-bold border-l-2 border-purple-400 pl-2'
                       : 'text-slate-400 hover:bg-slate-800/40 hover:text-slate-200'
                   ]"
                 >
-                  <div class="flex items-center space-x-1.5 truncate">
+                  <div class="flex items-center space-x-2 truncate">
                     <List class="w-3 h-3 text-slate-500" />
                     <span class="truncate">{{ list.name }}</span>
                   </div>
-                  <span v-if="list.task_count > 0" class="text-[9px] bg-slate-800 text-slate-400 px-1 rounded-full">
+                  <span v-if="list.task_count > 0" class="text-[9px] bg-slate-800 text-slate-400 px-1.5 py-0.2 rounded-full font-bold">
                     {{ list.task_count }}
                   </span>
                 </button>
@@ -178,10 +178,10 @@
             <div v-if="!taskStore.spaces || taskStore.spaces.length === 0" class="p-1 text-center">
               <button
                 @click="openCreateSpaceModal"
-                class="w-full py-2 px-2 border border-dashed border-slate-700 hover:border-purple-500 rounded-xl text-[11px] font-bold text-purple-400 hover:text-purple-300 hover:bg-purple-950/20 transition-all flex items-center justify-center space-x-1"
+                class="w-full py-2.5 px-3 border-2 border-dashed border-slate-700/80 hover:border-purple-500 rounded-xl text-xs font-bold text-purple-400 hover:text-purple-300 hover:bg-purple-950/20 transition-all flex items-center justify-center space-x-1.5"
               >
-                <Plus class="w-3.5 h-3.5 shrink-0" />
-                <span v-if="!taskStore.sidebarCollapsed">+ Create Space</span>
+                <Plus class="w-4 h-4 shrink-0" />
+                <span v-if="!taskStore.sidebarCollapsed">Create Space</span>
               </button>
             </div>
           </div>
@@ -190,8 +190,8 @@
         <!-- Team Members Section -->
         <div v-if="authStore.users && authStore.users.length > 0">
           <div v-if="!taskStore.sidebarCollapsed" class="px-2 mb-2 flex items-center justify-between">
-            <span class="text-[11px] font-bold tracking-wider text-slate-400 uppercase">Team Members</span>
-            <span class="text-[10px] text-slate-500">{{ authStore.users.length }}</span>
+            <span class="text-[11px] font-extrabold tracking-wider text-slate-400 uppercase">Team Members</span>
+            <span class="text-[10px] text-slate-500 font-bold">{{ authStore.users.length }}</span>
           </div>
 
           <div class="space-y-1">
@@ -199,12 +199,12 @@
               @click="filterByAssignee(null)"
               :title="'All Members'"
               :class="[
-                'w-full flex items-center rounded text-xs transition-colors',
-                taskStore.sidebarCollapsed ? 'justify-center p-2' : 'space-x-2 px-2 py-1',
-                !taskStore.assigneeFilter ? 'text-white font-bold bg-slate-800/60' : 'text-slate-400 hover:text-slate-200'
+                'w-full flex items-center rounded-xl text-xs transition-colors',
+                taskStore.sidebarCollapsed ? 'justify-center p-2.5' : 'space-x-2.5 px-3 py-1.5',
+                !taskStore.assigneeFilter ? 'text-white font-bold bg-slate-800/80' : 'text-slate-400 hover:text-slate-200'
               ]"
             >
-              <Users class="w-3.5 h-3.5 text-purple-400 shrink-0" />
+              <Users class="w-4 h-4 text-purple-400 shrink-0" />
               <span v-if="!taskStore.sidebarCollapsed">All Members</span>
             </button>
 
@@ -214,10 +214,10 @@
               @click="filterByAssignee(u._id || u.id)"
               :title="u.name"
               :class="[
-                'w-full flex items-center rounded text-xs transition-colors',
-                taskStore.sidebarCollapsed ? 'justify-center p-1.5' : 'justify-between px-2 py-1',
+                'w-full flex items-center rounded-xl text-xs transition-colors',
+                taskStore.sidebarCollapsed ? 'justify-center p-2' : 'justify-between px-3 py-1.5',
                 taskStore.assigneeFilter === (u._id || u.id)
-                  ? 'bg-purple-900/40 text-purple-300 font-bold border-l-2 border-purple-400 pl-1.5'
+                  ? 'bg-purple-900/50 text-purple-300 font-bold border-l-2 border-purple-400 pl-2'
                   : 'text-slate-400 hover:bg-slate-800/40 hover:text-slate-200'
               ]"
             >
@@ -225,16 +225,16 @@
                 <UserAvatar :name="u.name" :avatar="u.avatar" size="xs" />
                 <span v-if="!taskStore.sidebarCollapsed" class="truncate">{{ u.name }}</span>
               </div>
-              <span v-if="!taskStore.sidebarCollapsed" class="text-[9px] text-slate-500 uppercase">{{ u.role === 'super_admin' ? 'Admin' : u.role }}</span>
+              <span v-if="!taskStore.sidebarCollapsed" class="text-[9px] text-slate-500 uppercase font-bold">{{ u.role === 'super_admin' ? 'Admin' : u.role }}</span>
             </button>
           </div>
         </div>
       </div>
 
       <!-- User Profile Footer -->
-      <div class="p-3 border-t border-slate-800 bg-slate-950/60 flex items-center justify-between">
-        <div v-if="authStore.currentUser" class="flex items-center space-x-2.5 min-w-0">
-          <UserAvatar :name="authStore.currentUser?.name" :avatar="authStore.currentUser?.avatar" size="sm" />
+      <div class="p-3.5 border-t border-slate-800/80 bg-slate-950/80 shrink-0 flex items-center justify-between">
+        <div v-if="authStore.currentUser" class="flex items-center space-x-3 min-w-0">
+          <UserAvatar :name="authStore.currentUser?.name" :avatar="authStore.currentUser?.avatar" size="md" />
           <div v-if="!taskStore.sidebarCollapsed" class="min-w-0 flex-1">
             <p class="text-xs font-bold text-white truncate leading-tight">{{ authStore.currentUser?.name }}</p>
             <p class="text-[10px] text-slate-400 truncate">{{ authStore.currentUser?.email }}</p>
@@ -243,7 +243,7 @@
         <button
           v-else
           @click="authStore.authModalOpen = true; authStore.authMode = 'login'"
-          class="w-full py-1.5 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-lg transition-colors"
+          class="w-full py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold text-xs rounded-xl shadow-md shadow-purple-500/20 transition-all"
         >
           <span v-if="!taskStore.sidebarCollapsed">Sign In / Register</span>
           <span v-else>🔑</span>
