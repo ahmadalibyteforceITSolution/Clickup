@@ -121,10 +121,25 @@ onMounted(async () => {
     authStore.authMode = 'register';
   }
 
-  // 1. Auto-trigger sync when user switches back to browser tab
+  // 1. Handle direct task deep-linking from Gmail notification clicks (e.g. ?task=...)
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    const targetTaskId = urlParams.get('task');
+    const targetView = urlParams.get('view');
+    if (targetView) {
+      taskStore.activeView = targetView;
+    }
+    if (targetTaskId) {
+      await taskStore.openTaskModal(targetTaskId);
+    }
+  } catch (err) {
+    console.warn('Could not parse task query param:', err);
+  }
+
+  // 2. Auto-trigger sync when user switches back to browser tab
   window.addEventListener('focus', triggerAutoSync);
 
-  // 2. Periodic background auto-sync every 15 seconds (keeps tasks, spaces, and sheets live without page reload)
+  // 3. Periodic background auto-sync every 15 seconds (keeps tasks, spaces, and sheets live without page reload)
   autoSyncTimer = setInterval(triggerAutoSync, 15000);
 });
 

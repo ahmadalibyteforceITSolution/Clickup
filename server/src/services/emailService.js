@@ -6,6 +6,9 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+// Live production URL configured for emails (supports custom env override)
+const APP_BASE_URL = process.env.APP_URL || process.env.CLIENT_URL || 'https://clickup-dun.vercel.app';
+
 let transporter = null;
 
 export async function getTransporter() {
@@ -105,48 +108,54 @@ function createEmailTemplate({ title, badgeText, badgeColor = '#7b68ee', content
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${title}</title>
   </head>
-  <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; color: #1e293b;">
-    <div style="max-width: 600px; margin: 30px auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.06); border: 1px solid #e2e8f0;">
+  <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #1e293b; margin: 0; padding: 0; background-color: #f8fafc;">
+    <div style="max-width: 580px; margin: 30px auto; background: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);">
       
-      <!-- ClickUp Header -->
-      <div style="background: linear-gradient(135deg, #7b68ee 0%, #ff007f 100%); padding: 24px 30px; color: #ffffff;">
-        <table width="100%" cellpadding="0" cellspacing="0" border="0">
-          <tr>
-            <td>
-              <span style="font-size: 24px; font-weight: 800; letter-spacing: -0.5px; color: #ffffff;">Click<span style="color: #ffde59;">Up</span></span>
-              <span style="background: rgba(255,255,255,0.25); font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 20px; text-transform: uppercase; margin-left: 10px; vertical-align: middle;">Enterprise Hub</span>
-            </td>
-            <td align="right">
-              <span style="background: ${badgeColor}; color: #ffffff; font-size: 12px; font-weight: 700; padding: 5px 12px; border-radius: 6px; display: inline-block;">${badgeText}</span>
-            </td>
-          </tr>
-        </table>
+      <!-- ClickUp Top Header -->
+      <div style="background: linear-gradient(135deg, #7b68ee 0%, #4f46e5 100%); padding: 24px 30px; text-align: left; position: relative;">
+        <div style="display: inline-block; background: rgba(255, 255, 255, 0.2); padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 800; color: #ffffff; letter-spacing: 0.5px; margin-bottom: 10px;">
+          CLICKUP WORKSPACE
+        </div>
+        <h1 style="color: #ffffff; margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -0.5px;">${title}</h1>
       </div>
 
       <!-- Main Body -->
       <div style="padding: 30px;">
-        <h2 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 700; color: #0f172a; line-height: 1.3;">${title}</h2>
-        <div style="font-size: 14px; line-height: 1.6; color: #475569; margin-bottom: 24px;">
+        <div style="margin-bottom: 16px;">
+          <span style="display: inline-block; background-color: ${badgeColor}; color: #ffffff; font-size: 10px; font-weight: 800; text-transform: uppercase; padding: 3px 8px; border-radius: 4px; letter-spacing: 0.5px;">
+            ${badgeText}
+          </span>
+        </div>
+
+        <div style="color: #334155; font-size: 14px; margin-bottom: 24px;">
           ${contentHtml}
         </div>
 
         ${metaItems.length > 0 ? `
-          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-bottom: 24px;">
-            <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
-              ${metaRows}
-            </table>
-          </div>
+        <!-- Meta Details Table -->
+        <table style="width: 100%; border-collapse: collapse; background-color: #f8fafc; border-radius: 8px; overflow: hidden; margin-bottom: 24px; border: 1px solid #f1f5f9;">
+          <tbody>
+            ${metaRows}
+          </tbody>
+        </table>
         ` : ''}
 
         ${actionBtn ? `
-          <div style="text-align: center; margin: 30px 0 15px 0;">
-            <a href="${actionBtn.url}" style="background: #7b68ee; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 8px; font-weight: 600; font-size: 14px; display: inline-block; box-shadow: 0 4px 12px rgba(123, 104, 238, 0.3);">${actionBtn.text}</a>
-          </div>
+        <!-- Action Call-To-Action Button -->
+        <div style="text-align: center; margin: 30px 0 10px 0;">
+          <a href="${actionBtn.url}" style="display: inline-block; background: linear-gradient(135deg, #7b68ee 0%, #4f46e5 100%); color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 10px; font-size: 14px; font-weight: 700; box-shadow: 0 4px 10px rgba(123, 104, 238, 0.3);">
+            ${actionBtn.text} &rarr;
+          </a>
+          <p style="font-size: 11px; color: #94a3b8; margin-top: 10px; word-break: break-all;">
+            Direct link: <a href="${actionBtn.url}" style="color: #7b68ee;">${actionBtn.url}</a>
+          </p>
+        </div>
         ` : ''}
+
       </div>
 
       <!-- Footer -->
-      <div style="background: #f1f5f9; padding: 18px 30px; text-align: center; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8;">
+      <div style="background-color: #f8fafc; padding: 20px 30px; text-align: center; font-size: 12px; color: #94a3b8; border-top: 1px solid #f1f5f9;">
         <p style="margin: 0 0 6px 0;">This is an automated notification from your ClickUp Workspace.</p>
         <p style="margin: 0;">Manage your notification settings in ClickUp Preferences.</p>
       </div>
@@ -237,7 +246,7 @@ export async function notifyEmailVerification({ user, verificationCode }) {
     ],
     actionBtn: {
       text: 'Open ClickUp Workspace',
-      url: `http://localhost:5173/`
+      url: `${APP_BASE_URL}/`
     }
   });
 
@@ -275,7 +284,7 @@ export async function notifyTaskAssigned({ task, assignee, assignedBy }) {
     ],
     actionBtn: {
       text: 'Open Task in ClickUp',
-      url: `http://localhost:5173/?task=${task._id || task.id}`
+      url: `${APP_BASE_URL}/?task=${task._id || task.id}`
     }
   });
 
@@ -307,7 +316,7 @@ export async function notifyTaskScheduled({ task, user }) {
     ],
     actionBtn: {
       text: 'View in Calendar / Timeline',
-      url: `http://localhost:5173/?view=calendar&task=${task._id || task.id}`
+      url: `${APP_BASE_URL}/?view=calendar&task=${task._id || task.id}`
     }
   });
 
@@ -343,7 +352,7 @@ export async function notifyStatusChange({ task, user, oldStatus, newStatus, cha
     ],
     actionBtn: {
       text: 'Review Task Details',
-      url: `http://localhost:5173/?task=${task._id || task.id}`
+      url: `${APP_BASE_URL}/?task=${task._id || task.id}`
     }
   });
 
@@ -378,7 +387,7 @@ export async function notifyNewComment({ task, comment, author, recipient }) {
     ],
     actionBtn: {
       text: 'Reply to Comment',
-      url: `http://localhost:5173/?task=${task._id || task.id}`
+      url: `${APP_BASE_URL}/?task=${task._id || task.id}`
     }
   });
 
