@@ -184,7 +184,7 @@
             ]"
           >
             <div class="flex items-center space-x-2 truncate">
-              <img :src="u.avatar" class="w-4 h-4 rounded-full object-cover shrink-0" />
+              <UserAvatar :name="u.name" :avatar="u.avatar" size="xs" />
               <span class="truncate">{{ u.name }}</span>
             </div>
             <span class="text-[9px] text-slate-500 uppercase">{{ u.role === 'super_admin' ? 'Admin' : u.role }}</span>
@@ -196,11 +196,8 @@
     <!-- User Profile Footer -->
     <div class="p-3 border-t border-slate-800 bg-slate-950/60 flex items-center justify-between">
       <div v-if="authStore.currentUser" class="flex items-center space-x-2.5 min-w-0">
-        <img
-          :src="authStore.currentUser?.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=user'"
-          class="w-7 h-7 rounded-full object-cover ring-2 ring-purple-500/40 shrink-0"
-        />
-        <div class="min-w-0">
+        <UserAvatar :name="authStore.currentUser?.name" :avatar="authStore.currentUser?.avatar" size="sm" />
+        <div class="min-w-0 flex-1">
           <p class="text-xs font-bold text-white truncate leading-tight">{{ authStore.currentUser?.name }}</p>
           <p class="text-[10px] text-slate-400 truncate">{{ authStore.currentUser?.email }}</p>
         </div>
@@ -214,7 +211,7 @@
       </button>
     </div>
 
-    <!-- CUSTOM CREATE SPACE MODAL (Replaces browser window.prompt) -->
+    <!-- CUSTOM CREATE SPACE MODAL -->
     <div
       v-if="createSpaceModalOpen"
       class="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in"
@@ -276,7 +273,7 @@
       </div>
     </div>
 
-    <!-- CUSTOM CREATE LIST MODAL (Replaces browser window.prompt) -->
+    <!-- CUSTOM CREATE LIST MODAL -->
     <div
       v-if="createListModalOpen"
       class="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in"
@@ -330,6 +327,7 @@ import { ref } from 'vue';
 import { 
   Layers, Sliders, LayoutGrid, List, Kanban, Calendar, GanttChartSquare, BarChart3, Plus, Users, X 
 } from 'lucide-vue-next';
+import UserAvatar from '@/components/common/UserAvatar.vue';
 import { useAuthStore } from '@/stores/authStore';
 import { useTaskStore } from '@/stores/taskStore';
 

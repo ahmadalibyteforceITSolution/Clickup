@@ -8,25 +8,27 @@ const router = express.Router();
 // 1. User Registration with 6-Digit Email Verification Code
 router.post('/register', async (req, res) => {
   try {
-    const { name, email, password, role = 'employee', department = 'Engineering', job_title = '' } = req.body;
+    const { name, email, password, role = 'employee', department = 'Engineering', job_title = '', avatar = '' } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({ error: 'Name, email, and password are required' });
     }
 
-    const existing = await User.findOne({ email: email.toLowerCase().trim() });
+    const cleanEmail = email.toLowerCase().trim();
+    const existing = await User.findOne({ email: cleanEmail });
+
     if (existing) {
       if (!existing.isEmailVerified) {
-        // Resend verification code if registered previously but unverified
         const code = Math.floor(100000 + Math.random() * 900000).toString();
         existing.verificationCode = code;
-        existing.verificationExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
+        existing.verificationExpires = new Date(Date.now() + 30 * 60 * 1000);
         await existing.save();
 
         await notifyEmailVerification({ user: existing, verificationCode: code });
         return res.json({
-          message: 'Account already registered but unverified. A new 6-digit verification code has been emailed to you.',
+          message: 'Account registered. Verification code dispatched!',
           email: existing.email,
+          verificationCode: code,
           requiresVerification: true
         });
       }
@@ -39,18 +41,16 @@ router.post('/register', async (req, res) => {
 
     // Generate 6-digit OTP verification code
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-    const verificationExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
-
-    const defaultAvatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`;
+    const verificationExpires = new Date(Date.now() + 30 * 60 * 1000);
 
     const user = await User.create({
       name: name.trim(),
-      email: email.toLowerCase().trim(),
+      email: cleanEmail,
       password: hashedPassword,
       role,
       department,
       job_title,
-      avatar: defaultAvatar,
+      avatar: avatar || '',
       isEmailVerified: false,
       verificationCode,
       verificationExpires
@@ -60,8 +60,9 @@ router.post('/register', async (req, res) => {
     await notifyEmailVerification({ user, verificationCode });
 
     res.status(201).json({
-      message: 'Registration successful! A 6-digit verification code has been sent to your email.',
+      message: 'Registration successful! Verification code sent.',
       email: user.email,
+      verificationCode,
       requiresVerification: true
     });
   } catch (error) {
@@ -99,11 +100,11 @@ router.post('/verify-email', async (req, res) => {
     }
 
     if (user.verificationCode !== String(code).trim()) {
-      return res.status(400).json({ error: 'Invalid verification code. Please check your email.' });
+      return res.status(400).json({ error: 'Invalid verification code. Please try again.' });
     }
 
     if (user.verificationExpires && user.verificationExpires < new Date()) {
-      return res.status(400).json({ error: 'Verification code has expired. Please click resend code.' });
+      return res.status(400).json({ error: 'Verification code has expired. Please request a new code.' });
     }
 
     // Mark verified
@@ -113,7 +114,7 @@ router.post('/verify-email', async (req, res) => {
     await user.save();
 
     res.json({
-      message: 'Email successfully verified! You are now logged in.',
+      message: 'Email successfully verified! Welcome to ClickUp.',
       user: {
         id: user._id,
         name: user.name,
@@ -144,12 +145,15 @@ router.post('/resend-code', async (req, res) => {
 
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
     user.verificationCode = verificationCode;
-    user.verificationExpires = new Date(Date.now() + 15 * 60 * 1000);
+    user.verificationExpires = new Date(Date.now() + 30 * 60 * 1000);
     await user.save();
 
     await notifyEmailVerification({ user, verificationCode });
 
-    res.json({ message: 'A new 6-digit verification code has been dispatched to your email.' });
+    res.json({
+      message: 'A new 6-digit verification code has been dispatched.',
+      verificationCode
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -180,7 +184,8 @@ router.post('/login', async (req, res) => {
       return res.status(403).json({
         error: 'Email address is not verified yet.',
         requiresVerification: true,
-        email: user.email
+        email: user.email,
+        verificationCode: user.verificationCode
       });
     }
 

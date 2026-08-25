@@ -126,16 +126,16 @@
         <Moon v-else class="w-4 h-4 text-slate-600" />
       </button>
 
-      <!-- Live User / Persona Switcher or Login button -->
+      <!-- Live User Persona Menu & Edit Profile Trigger -->
       <div class="relative ml-2">
         <button
           @click="userMenuOpen = !userMenuOpen"
           class="flex items-center space-x-2 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-[#292B2F] border border-slate-200 dark:border-[#2F3136] transition-colors"
         >
-          <img
-            :src="authStore.currentUser?.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=user'"
-            alt="Avatar"
-            class="w-6 h-6 rounded-full object-cover ring-2 ring-purple-500/30"
+          <UserAvatar
+            :name="authStore.currentUser?.name"
+            :avatar="authStore.currentUser?.avatar"
+            size="sm"
           />
           <div class="text-left hidden lg:block pr-1">
             <p class="text-xs font-bold text-slate-800 dark:text-slate-200 leading-tight">
@@ -148,78 +148,79 @@
           <ChevronDown class="w-3.5 h-3.5 text-slate-400" />
         </button>
 
-        <!-- Persona Selection Dropdown -->
+        <!-- User Dropdown Menu -->
         <div
           v-if="userMenuOpen"
-          class="absolute right-0 mt-2 w-72 bg-white dark:bg-[#202225] rounded-xl shadow-2xl border border-slate-200 dark:border-[#2F3136] py-2 z-50 animate-fade-in"
+          class="absolute right-0 mt-2 w-72 bg-white dark:bg-[#202225] rounded-2xl shadow-2xl border border-slate-200 dark:border-[#2F3136] py-2 z-50 animate-fade-in"
         >
-          <div class="px-3 py-2 border-b border-slate-100 dark:border-[#2F3136] flex items-center justify-between">
-            <div>
-              <p class="text-xs font-bold text-slate-700 dark:text-slate-300">Active Persona</p>
-              <p class="text-[10px] text-slate-400">Click to switch or login</p>
+          <div class="px-4 py-3 border-b border-slate-100 dark:border-[#2F3136] flex items-center space-x-3">
+            <UserAvatar
+              :name="authStore.currentUser?.name"
+              :avatar="authStore.currentUser?.avatar"
+              size="md"
+            />
+            <div class="min-w-0 flex-1">
+              <p class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">{{ authStore.currentUser?.name || 'Guest User' }}</p>
+              <p class="text-[10px] text-slate-400 truncate">{{ authStore.currentUser?.email }}</p>
             </div>
-            <button
-              @click="authStore.authModalOpen = true; authStore.authMode = 'login'; userMenuOpen = false"
-              class="text-xs font-bold text-purple-600 dark:text-purple-400 hover:underline"
-            >
-              Sign In
-            </button>
           </div>
 
-          <div class="max-h-64 overflow-y-auto py-1">
+          <div class="p-2 space-y-1">
+            <!-- Edit Profile & Photo Button -->
             <button
-              v-for="u in authStore.users"
-              :key="u._id || u.id"
-              @click="switchPersona(u)"
-              class="w-full text-left px-3 py-2 hover:bg-purple-50 dark:hover:bg-[#292B2F] flex items-center space-x-2.5 transition-colors"
-              :class="{ 'bg-purple-50 dark:bg-purple-950/30 border-l-4 border-purple-600': (u._id || u.id) === (authStore.currentUser?._id || authStore.currentUser?.id) }"
+              @click="editProfileOpen = true; userMenuOpen = false"
+              class="w-full text-left px-3 py-2 text-xs font-bold text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/30 rounded-xl flex items-center space-x-2 transition-colors"
             >
-              <img :src="u.avatar" class="w-7 h-7 rounded-full object-cover" />
-              <div class="flex-1 min-w-0">
-                <p class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">{{ u.name }}</p>
-                <p class="text-[10px] text-slate-400 truncate">{{ u.job_title || u.department }}</p>
-              </div>
-              <span
-                :class="[
-                  'text-[9px] font-bold uppercase px-1.5 py-0.5 rounded tracking-wide',
-                  u.role === 'super_admin' ? 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300' :
-                  u.role === 'manager' ? 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300' :
-                  'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300'
-                ]"
-              >
-                {{ u.role.replace('_', ' ') }}
-              </span>
+              <UserEdit class="w-4 h-4" />
+              <span>Edit Profile & Upload Photo</span>
             </button>
-          </div>
 
-          <div class="border-t border-slate-100 dark:border-[#2F3136] px-2 pt-2 mt-1 space-y-1">
+            <!-- Register / Switch Account -->
             <button
               @click="authStore.authModalOpen = true; authStore.authMode = 'register'; userMenuOpen = false"
-              class="w-full text-left px-2 py-1.5 text-xs text-purple-600 dark:text-purple-400 font-bold hover:bg-purple-50 dark:hover:bg-purple-950/30 rounded flex items-center space-x-2"
+              class="w-full text-left px-3 py-2 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#292B2F] rounded-xl flex items-center space-x-2 transition-colors"
             >
-              <UserPlus class="w-3.5 h-3.5" />
+              <UserPlus class="w-4 h-4 text-slate-400" />
               <span>Register New Account</span>
             </button>
 
+            <!-- Settings & SMTP -->
             <button
               @click="taskStore.settingsModalOpen = true; userMenuOpen = false"
-              class="w-full text-left px-2 py-1.5 text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#292B2F] rounded flex items-center space-x-2"
+              class="w-full text-left px-3 py-2 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#292B2F] rounded-xl flex items-center space-x-2 transition-colors"
             >
-              <Settings class="w-3.5 h-3.5 text-slate-400" />
+              <Settings class="w-4 h-4 text-slate-400" />
               <span>Workspace Settings & SMTP</span>
+            </button>
+
+            <!-- Logout -->
+            <button
+              @click="authStore.logout(); userMenuOpen = false"
+              class="w-full text-left px-3 py-2 text-xs text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-xl flex items-center space-x-2 transition-colors"
+            >
+              <LogOut class="w-4 h-4" />
+              <span>Sign Out</span>
             </button>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- Edit Profile Modal -->
+    <EditProfileModal
+      :isOpen="editProfileOpen"
+      @close="editProfileOpen = false"
+    />
   </header>
 </template>
 
 <script setup>
 import { ref } from 'vue';
 import { 
-  Search, X, Plus, Mail, Bell, Sun, Moon, ChevronDown, Clock, Settings, UserPlus 
+  Search, X, Plus, Mail, Bell, Sun, Moon, ChevronDown, Clock, Settings, UserPlus, LogOut, UserCheck as UserEdit 
 } from 'lucide-vue-next';
+import UserAvatar from '@/components/common/UserAvatar.vue';
+import EditProfileModal from '@/components/settings/EditProfileModal.vue';
 import { useAuthStore } from '@/stores/authStore';
 import { useTaskStore } from '@/stores/taskStore';
 import { useNotificationStore } from '@/stores/notificationStore';
@@ -231,6 +232,7 @@ const notifStore = useNotificationStore();
 
 const notificationsOpen = ref(false);
 const userMenuOpen = ref(false);
+const editProfileOpen = ref(false);
 const isDark = ref(false);
 
 function toggleTheme() {
@@ -244,13 +246,6 @@ function toggleTheme() {
 
 function toggleOverdueFilter() {
   taskStore.showOverdueOnly = !taskStore.showOverdueOnly;
-  taskStore.fetchTasks();
-}
-
-function switchPersona(user) {
-  authStore.switchUser(user);
-  userMenuOpen.value = false;
-  notifStore.fetchNotifications(user._id || user.id);
   taskStore.fetchTasks();
 }
 

@@ -121,34 +121,6 @@
           >
             {{ authStore.loading ? 'Signing In...' : 'Sign In' }}
           </button>
-
-          <!-- Quick Persona Auto-Fill -->
-          <div class="pt-2">
-            <p class="text-[10px] font-bold text-slate-400 uppercase text-center mb-2">Or Quick Switch Persona</p>
-            <div class="grid grid-cols-3 gap-1.5">
-              <button
-                type="button"
-                @click="quickSelectPersona('admin')"
-                class="px-2 py-1.5 rounded-lg bg-slate-100 dark:bg-[#18191B] hover:bg-purple-100 text-[10px] font-bold text-slate-700 dark:text-slate-300 transition-colors truncate"
-              >
-                👑 Admin
-              </button>
-              <button
-                type="button"
-                @click="quickSelectPersona('manager')"
-                class="px-2 py-1.5 rounded-lg bg-slate-100 dark:bg-[#18191B] hover:bg-purple-100 text-[10px] font-bold text-slate-700 dark:text-slate-300 transition-colors truncate"
-              >
-                💼 Manager
-              </button>
-              <button
-                type="button"
-                @click="quickSelectPersona('employee')"
-                class="px-2 py-1.5 rounded-lg bg-slate-100 dark:bg-[#18191B] hover:bg-purple-100 text-[10px] font-bold text-slate-700 dark:text-slate-300 transition-colors truncate"
-              >
-                👨‍💻 Employee
-              </button>
-            </div>
-          </div>
         </form>
 
         <!-- 2. REGISTRATION FORM -->
@@ -194,8 +166,9 @@
                 v-model="regForm.role"
                 class="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none font-semibold"
               >
-                <option value="employee">Employee</option>
+                <option value="super_admin">Super Admin / Owner</option>
                 <option value="manager">Manager</option>
+                <option value="employee">Employee</option>
               </select>
             </div>
             <div>
@@ -227,15 +200,33 @@
             <p class="text-xs font-bold text-purple-600 dark:text-purple-400">{{ authStore.unverifiedEmail }}</p>
           </div>
 
+          <!-- Code Helper Banner if available in response -->
+          <div
+            v-if="authStore.previewVerificationCode"
+            class="p-3 bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 rounded-xl text-center space-y-1"
+          >
+            <p class="text-[11px] text-purple-700 dark:text-purple-300 font-semibold">⚡ Your Verification Code:</p>
+            <div class="flex items-center justify-center space-x-2">
+              <span class="text-lg font-mono font-black text-purple-900 dark:text-purple-200 tracking-widest">{{ authStore.previewVerificationCode }}</span>
+              <button
+                type="button"
+                @click="verificationCode = authStore.previewVerificationCode"
+                class="text-[10px] bg-purple-600 hover:bg-purple-700 text-white font-bold px-2 py-0.5 rounded shadow-sm"
+              >
+                Auto-fill
+              </button>
+            </div>
+          </div>
+
           <div>
-            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1 text-center">6-Digit Code</label>
+            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1 text-center">6-DIGIT CODE</label>
             <input
               v-model="verificationCode"
               type="text"
               maxlength="6"
               required
-              placeholder="123456"
-              class="w-full text-center tracking-[12px] font-mono text-2xl font-black px-4 py-3 bg-purple-50/50 dark:bg-[#18191B] border-2 border-purple-500 rounded-2xl text-purple-900 dark:text-purple-300 focus:outline-none"
+              placeholder="1 2 3 4 5 6"
+              class="w-full text-center tracking-[12px] font-mono text-2xl font-black px-4 py-3 bg-slate-50 dark:bg-[#18191B] border-2 border-purple-500 rounded-2xl text-purple-900 dark:text-purple-300 focus:outline-none shadow-sm"
             />
           </div>
 
@@ -296,7 +287,7 @@ const regForm = reactive({
   name: '',
   email: '',
   password: '',
-  role: 'employee',
+  role: 'super_admin',
   department: 'Engineering'
 });
 
@@ -344,20 +335,6 @@ async function handleResendCode() {
     successMessage.value = res.message;
   } catch (err) {
     errorMessage.value = err.message;
-  }
-}
-
-function quickSelectPersona(type) {
-  if (authStore.users.length === 0) return;
-  let user = null;
-  if (type === 'admin') user = authStore.users.find(u => u.role === 'super_admin');
-  else if (type === 'manager') user = authStore.users.find(u => u.role === 'manager');
-  else user = authStore.users.find(u => u.role === 'employee');
-
-  if (user) {
-    authStore.switchUser(user);
-    authStore.authModalOpen = false;
-    taskStore.fetchTasks();
   }
 }
 </script>

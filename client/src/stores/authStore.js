@@ -9,7 +9,8 @@ export const useAuthStore = defineStore('auth', {
     error: null,
     authModalOpen: false,
     authMode: 'login', // 'login' | 'register' | 'verify'
-    unverifiedEmail: ''
+    unverifiedEmail: '',
+    previewVerificationCode: ''
   }),
 
   getters: {
@@ -54,6 +55,7 @@ export const useAuthStore = defineStore('auth', {
       try {
         const res = await axios.post('/api/auth/register', userData);
         this.unverifiedEmail = userData.email;
+        this.previewVerificationCode = res.data.verificationCode || '';
         this.authMode = 'verify';
         return res.data;
       } catch (err) {
@@ -71,6 +73,7 @@ export const useAuthStore = defineStore('auth', {
         const res = await axios.post('/api/auth/verify-email', { email, code });
         this.currentUser = res.data.user;
         this.authModalOpen = false;
+        this.previewVerificationCode = '';
         await this.fetchUsers();
         return res.data;
       } catch (err) {
@@ -84,6 +87,7 @@ export const useAuthStore = defineStore('auth', {
     async resendVerificationCode(email) {
       try {
         const res = await axios.post('/api/auth/resend-code', { email });
+        this.previewVerificationCode = res.data.verificationCode || '';
         return res.data;
       } catch (err) {
         throw new Error(err.response?.data?.error || err.message);
@@ -102,6 +106,7 @@ export const useAuthStore = defineStore('auth', {
       } catch (err) {
         if (err.response?.data?.requiresVerification) {
           this.unverifiedEmail = email;
+          this.previewVerificationCode = err.response.data.verificationCode || '';
           this.authMode = 'verify';
         }
         this.error = err.response?.data?.error || err.message;

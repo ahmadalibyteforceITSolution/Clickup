@@ -1,8 +1,60 @@
 import express from 'express';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
 import User from '../models/User.js';
 import Task from '../models/Task.js';
 
 const router = express.Router();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const uploadDir = path.join(__dirname, '../../uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'avatar-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 }
+});
+
+// Upload profile avatar
+router.post('/:id/avatar', upload.single('avatar'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No avatar image uploaded' });
+    }
+
+    const avatarUrl = `/uploads/${req.file.filename}`;
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { avatar: avatarUrl },
+      { new: true }
+    );
+
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    res.json({
+      message: 'Avatar updated successfully',
+      avatar: user.avatar,
+      user
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 // Get all users
 router.get('/', async (req, res) => {
@@ -48,38 +100,20 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Create user (Super Admin)
-router.post('/', async (req, res) => {
-  try {
-    const { name, email, role = 'employee', department = 'General', job_title = '', avatar } = req.body;
-    if (!name || !email) {
-      return res.status(400).json({ error: 'Name and email are required' });
-    }
-
-    const defaultAvatar = avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`;
-
-    const user = await User.create({
-      name,
-      email,
-      role,
-      department,
-      job_title,
-      avatar: defaultAvatar
-    });
-
-    res.status(201).json(user);
-  } catch (error) {
-    if (error.code === 11000) {
-      return res.status(409).json({ error: 'Email already registered' });
-    }
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Update user
+// Update user profile
 router.put('/:id', async (req, res) => {
   try {
-    const user = await User.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const { name, department, job_title, avatar } = req.body;
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { 
+        ...(name && { name: name.trim() }),
+        ...(department !== undefined && { department }),
+        ...(job_title !== undefined && { job_title }),
+        ...(avatar !== undefined && { avatar })
+      },
+      { new: true }
+    );
     if (!user) return res.status(404).json({ error: 'User not found' });
     res.json(user);
   } catch (error) {
