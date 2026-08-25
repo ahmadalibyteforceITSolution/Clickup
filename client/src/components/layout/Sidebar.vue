@@ -19,12 +19,12 @@
       <!-- Workspace Brand Header -->
       <div class="h-16 px-4 flex items-center justify-between border-b border-slate-800/80 bg-slate-950/60 shrink-0">
         <div class="flex items-center space-x-3 overflow-hidden">
-          <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 via-pink-500 to-indigo-600 flex items-center justify-center text-white shrink-0 shadow-lg shadow-purple-500/25">
+          <div class="w-9 h-9 rounded-xl theme-gradient-bg flex items-center justify-center text-white shrink-0 shadow-lg theme-shadow">
             <Layers class="w-5 h-5" />
           </div>
           <div v-if="!taskStore.sidebarCollapsed" class="truncate flex items-center space-x-1.5">
-            <span class="font-black text-lg tracking-tight text-white">Click<span class="text-purple-400">Up</span></span>
-            <span class="text-[10px] bg-purple-900/60 text-purple-300 font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider">Workspace</span>
+            <span class="font-black text-lg tracking-tight text-white">Click<span class="theme-text">Up</span></span>
+            <span class="text-[10px] theme-light-bg theme-text font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider">Workspace</span>
           </div>
         </div>
 
@@ -66,7 +66,7 @@
                 'w-full flex items-center rounded-xl text-xs font-bold transition-all',
                 taskStore.sidebarCollapsed ? 'justify-center p-3' : 'space-x-3 px-3 py-2.5',
                 taskStore.activeView === v.id
-                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-500/30'
+                  ? 'theme-gradient-bg text-white shadow-md theme-shadow'
                   : 'text-slate-300 hover:bg-slate-800/70 hover:text-white'
               ]"
             >
@@ -84,7 +84,7 @@
             <button
               v-if="authStore.isSuperAdmin || authStore.isManager"
               @click="openCreateSpaceModal"
-              class="text-slate-400 hover:text-purple-400 p-1 rounded-lg hover:bg-slate-800/60 transition-colors"
+              class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800/60 transition-colors"
               title="Create New Space"
             >
               <Plus class="w-4 h-4" />
@@ -104,7 +104,7 @@
             ]"
           >
             <div class="flex items-center space-x-2.5">
-              <LayoutGrid class="w-4 h-4 text-purple-400 shrink-0" />
+              <LayoutGrid class="w-4 h-4 theme-text shrink-0" />
               <span v-if="!taskStore.sidebarCollapsed">{{ authStore.isEmployee ? 'My Spaces' : 'All Spaces' }}</span>
             </div>
             <span v-if="!taskStore.sidebarCollapsed" class="text-[10px] bg-slate-800/80 text-slate-300 px-2 py-0.5 rounded-full font-bold">
@@ -133,7 +133,7 @@
                 <div class="flex items-center space-x-2.5 truncate">
                   <span
                     class="w-2.5 h-2.5 rounded-full shrink-0 ring-2 ring-white/10"
-                    :style="{ backgroundColor: space.color || '#7b68ee' }"
+                    :style="{ backgroundColor: space.color || 'var(--theme-primary)' }"
                   ></span>
                   <span v-if="!taskStore.sidebarCollapsed" class="truncate">{{ space.name }}</span>
                 </div>
@@ -143,7 +143,7 @@
                   <!-- Add List -->
                   <button
                     @click.stop="openCreateListModal(space._id || space.id, space.name)"
-                    class="hover:text-purple-400 p-1 rounded hover:bg-slate-700/50"
+                    class="hover:text-white p-1 rounded hover:bg-slate-700/50"
                     title="Add List"
                   >
                     <Plus class="w-3.5 h-3.5" />
@@ -151,7 +151,7 @@
                   <!-- Edit / Rename Space -->
                   <button
                     @click.stop="openEditSpaceModal(space)"
-                    class="hover:text-purple-400 p-1 rounded hover:bg-slate-700/50"
+                    class="hover:text-white p-1 rounded hover:bg-slate-700/50"
                     title="Rename / Edit Space"
                   >
                     <Edit3 class="w-3.5 h-3.5" />
@@ -179,7 +179,7 @@
                   :class="[
                     'w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-colors cursor-pointer group/list',
                     taskStore.selectedListId === (list._id || list.id)
-                      ? 'bg-purple-900/50 text-purple-300 font-bold border-l-2 border-purple-400 pl-2'
+                      ? 'theme-light-bg theme-text font-bold border-l-2 theme-border pl-2'
                       : 'text-slate-400 hover:bg-slate-800/40 hover:text-slate-200'
                   ]"
                 >
@@ -196,7 +196,7 @@
                     <div v-if="authStore.isSuperAdmin || authStore.isManager" class="flex items-center space-x-0.5 opacity-0 group-hover/list:opacity-100 transition-opacity">
                       <button
                         @click.stop="openEditListModal(space._id || space.id, list)"
-                        class="p-0.5 hover:text-purple-400 rounded hover:bg-slate-700/50"
+                        class="p-0.5 hover:text-white rounded hover:bg-slate-700/50"
                         title="Rename List"
                       >
                         <Edit3 class="w-3 h-3" />
@@ -218,7 +218,7 @@
             <div v-if="(!taskStore.spaces || taskStore.spaces.length === 0) && (authStore.isSuperAdmin || authStore.isManager)" class="p-1 text-center">
               <button
                 @click="openCreateSpaceModal"
-                class="w-full py-2.5 px-3 border-2 border-dashed border-slate-700/80 hover:border-purple-500 rounded-xl text-xs font-bold text-purple-400 hover:text-purple-300 hover:bg-purple-950/20 transition-all flex items-center justify-center space-x-1.5"
+                class="w-full py-2.5 px-3 border-2 border-dashed border-slate-700/80 theme-border rounded-xl text-xs font-bold theme-text hover:opacity-90 theme-light-bg transition-all flex items-center justify-center space-x-1.5"
               >
                 <Plus class="w-4 h-4 shrink-0" />
                 <span v-if="!taskStore.sidebarCollapsed">Create Space</span>
@@ -244,7 +244,7 @@
                 !taskStore.assigneeFilter ? 'text-white font-bold bg-slate-800/80' : 'text-slate-400 hover:text-slate-200'
               ]"
             >
-              <Users class="w-4 h-4 text-purple-400 shrink-0" />
+              <Users class="w-4 h-4 theme-text shrink-0" />
               <span v-if="!taskStore.sidebarCollapsed">All Members</span>
             </button>
 
@@ -253,7 +253,7 @@
               :key="u._id || u.id"
               class="flex items-center justify-between group rounded-xl hover:bg-slate-800/40 transition-colors"
               :class="[
-                taskStore.assigneeFilter === (u._id || u.id) ? 'bg-purple-900/50 text-purple-300 font-bold border-l-2 border-purple-400' : ''
+                taskStore.assigneeFilter === (u._id || u.id) ? 'theme-light-bg theme-text font-bold border-l-2 theme-border' : ''
               ]"
             >
               <button
@@ -263,7 +263,7 @@
                   'flex items-center flex-1 min-w-0 text-xs transition-colors',
                   taskStore.sidebarCollapsed ? 'justify-center p-2' : 'justify-between px-3 py-1.5',
                   taskStore.assigneeFilter === (u._id || u.id)
-                    ? 'text-purple-300 font-bold pl-2'
+                    ? 'theme-text font-bold pl-2'
                     : 'text-slate-400 hover:text-slate-200'
                 ]"
               >
@@ -280,7 +280,7 @@
               <button
                 v-if="!taskStore.sidebarCollapsed && authStore.isSuperAdmin"
                 @click.stop="openEditMemberModal(u)"
-                class="opacity-0 group-hover:opacity-100 p-1.5 mr-1 text-slate-400 hover:text-purple-400 hover:bg-slate-700/50 rounded-lg transition-opacity"
+                class="opacity-0 group-hover:opacity-100 p-1.5 mr-1 text-slate-400 hover:text-white hover:bg-slate-700/50 rounded-lg transition-opacity"
                 title="Edit / Delete Employee Profile"
               >
                 <Edit3 class="w-3.5 h-3.5" />
@@ -296,13 +296,13 @@
           <UserAvatar :name="authStore.currentUser?.name" :avatar="authStore.currentUser?.avatar" size="md" />
           <div v-if="!taskStore.sidebarCollapsed" class="min-w-0 flex-1">
             <p class="text-xs font-bold text-white truncate leading-tight">{{ authStore.currentUser?.name }}</p>
-            <p class="text-[10px] text-purple-400 font-semibold truncate uppercase">{{ authStore.roleLabel }}</p>
+            <p class="text-[10px] theme-text font-semibold truncate uppercase">{{ authStore.roleLabel }}</p>
           </div>
         </div>
         <button
           v-else
           @click="authStore.authModalOpen = true; authStore.authMode = 'login'"
-          class="w-full py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold text-xs rounded-xl shadow-md shadow-purple-500/20 transition-all"
+          class="w-full py-2.5 theme-gradient-bg text-white font-bold text-xs rounded-xl shadow-md theme-shadow transition-all hover:opacity-90"
         >
           <span v-if="!taskStore.sidebarCollapsed">Sign In / Register</span>
           <span v-else>🔑</span>
@@ -333,7 +333,7 @@
               type="text"
               required
               placeholder="e.g. Marketing, Engineering, Operations..."
-              class="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-purple-500"
+              class="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] rounded-xl text-slate-900 dark:text-white focus:outline-none theme-border"
               @keyup.enter="handleSaveSpace"
             />
           </div>
@@ -342,13 +342,13 @@
             <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Space Theme Color</label>
             <div class="flex items-center space-x-2">
               <button
-                v-for="color in ['#7B68EE', '#FF007F', '#00C875', '#1E75FF', '#FF7F00', '#F83232']"
+                v-for="color in ['#7B68EE', '#2563EB', '#059669', '#E11D48', '#EA580C', '#0D9488', '#DC2626', '#4F46E5']"
                 :key="color"
                 type="button"
                 @click="selectedSpaceColor = color"
                 class="w-6 h-6 rounded-full transition-transform"
                 :style="{ backgroundColor: color }"
-                :class="{ 'ring-2 ring-offset-2 ring-purple-500 scale-110': selectedSpaceColor === color }"
+                :class="{ 'ring-2 ring-offset-2 scale-110': selectedSpaceColor === color }"
               ></button>
             </div>
           </div>
@@ -363,7 +363,7 @@
             <button
               @click="handleSaveSpace"
               :disabled="!newSpaceName.trim()"
-              class="px-4 py-1.5 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-sm transition-all"
+              class="px-4 py-1.5 theme-bg hover:opacity-90 disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-sm transition-all"
             >
               {{ editSpaceModalOpen ? 'Save Changes' : 'Create Space' }}
             </button>
@@ -380,7 +380,7 @@
         <div class="bg-white dark:bg-[#202225] rounded-2xl shadow-2xl border border-slate-200 dark:border-[#2F3136] w-full max-w-sm p-5 space-y-4 text-slate-900 dark:text-white">
           <div class="flex items-center justify-between">
             <h3 class="text-sm font-extrabold flex items-center space-x-2">
-              <List class="w-4 h-4 text-purple-500" />
+              <List class="w-4 h-4 theme-text" />
               <span>{{ editListModalOpen ? 'Rename List' : `Add List in ${targetSpaceName}` }}</span>
             </h3>
             <button @click="closeListModals" class="text-slate-400 hover:text-slate-600">
@@ -395,7 +395,7 @@
               type="text"
               required
               placeholder="e.g. Sprint 1, Backlog, Ideas, General Tasks..."
-              class="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-purple-500"
+              class="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] rounded-xl text-slate-900 dark:text-white focus:outline-none theme-border"
               @keyup.enter="handleSaveList"
             />
           </div>
@@ -410,7 +410,7 @@
             <button
               @click="handleSaveList"
               :disabled="!newListName.trim()"
-              class="px-4 py-1.5 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-sm transition-all"
+              class="px-4 py-1.5 theme-bg hover:opacity-90 disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-sm transition-all"
             >
               {{ editListModalOpen ? 'Save Changes' : 'Add List' }}
             </button>
@@ -508,7 +508,7 @@ function filterByAssignee(userId) {
 function openCreateSpaceModal() {
   editingSpaceId.value = null;
   newSpaceName.value = '';
-  selectedSpaceColor.value = '#7B68EE';
+  selectedSpaceColor.value = uiStore.themeColor || '#7B68EE';
   editSpaceModalOpen.value = false;
   createSpaceModalOpen.value = true;
 }
@@ -516,7 +516,7 @@ function openCreateSpaceModal() {
 function openEditSpaceModal(space) {
   editingSpaceId.value = space._id || space.id;
   newSpaceName.value = space.name || '';
-  selectedSpaceColor.value = space.color || '#7B68EE';
+  selectedSpaceColor.value = space.color || uiStore.themeColor || '#7B68EE';
   createSpaceModalOpen.value = false;
   editSpaceModalOpen.value = true;
 }
