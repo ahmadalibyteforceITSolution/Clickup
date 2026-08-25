@@ -1,0 +1,16 @@
+{
+  "name": "clickup-clone-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Full-Featured ClickUp Clone in Vue.js and Node.js SQLite with Email Engine",
+  "scripts": {
+    "dev": "concurrently \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
+    "install:all": "npm install && npm install --prefix server && npm install --prefix client",
+    "seed": "npm run seed --prefix server",
+    "start": "node server/src/index.js",
+    "build": "npm run build --prefix client"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
