@@ -22,6 +22,7 @@ export const useTaskStore = defineStore('tasks', {
     createTaskModalOpen: false,
     emailOutboxModalOpen: false,
     settingsModalOpen: false,
+    sidebarCollapsed: false,
     sidebarMobileOpen: false,
 
     // Analytics
@@ -32,7 +33,8 @@ export const useTaskStore = defineStore('tasks', {
 
   getters: {
     filteredTasks: (state) => {
-      return state.tasks.filter(task => {
+      const taskList = Array.isArray(state.tasks) ? state.tasks : [];
+      return taskList.filter(task => {
         if (state.selectedSpaceId && task.space_id?._id !== state.selectedSpaceId && task.space_id !== state.selectedSpaceId) {
           return false;
         }
@@ -54,9 +56,9 @@ export const useTaskStore = defineStore('tasks', {
           const today = new Date().toISOString().split('T')[0];
           if (task.dueDate >= today) return false;
         }
-        if (state.searchQuery.trim()) {
+        if (state.searchQuery && state.searchQuery.trim()) {
           const query = state.searchQuery.toLowerCase();
-          const titleMatch = task.title.toLowerCase().includes(query);
+          const titleMatch = (task.title || '').toLowerCase().includes(query);
           const descMatch = (task.description || '').toLowerCase().includes(query);
           if (!titleMatch && !descMatch) return false;
         }
@@ -102,7 +104,8 @@ export const useTaskStore = defineStore('tasks', {
 
     activeSpace: (state) => {
       if (!state.selectedSpaceId) return null;
-      return state.spaces.find(s => (s._id || s.id) === state.selectedSpaceId);
+      const spaceList = Array.isArray(state.spaces) ? state.spaces : [];
+      return spaceList.find(s => (s._id || s.id) === state.selectedSpaceId);
     },
 
     activeList: (state) => {
@@ -112,11 +115,20 @@ export const useTaskStore = defineStore('tasks', {
   },
 
   actions: {
+    toggleSidebar() {
+      this.sidebarCollapsed = !this.sidebarCollapsed;
+    },
+
+    toggleMobileSidebar() {
+      this.sidebarMobileOpen = !this.sidebarMobileOpen;
+    },
+
     async fetchSpaces() {
       try {
         const res = await axios.get('/api/spaces');
-        this.spaces = res.data;
+        this.spaces = Array.isArray(res.data) ? res.data : [];
       } catch (err) {
+        this.spaces = [];
         this.error = err.message;
       }
     },
@@ -134,8 +146,9 @@ export const useTaskStore = defineStore('tasks', {
         if (this.showOverdueOnly) params.overdue = 'true';
 
         const res = await axios.get('/api/tasks', { params });
-        this.tasks = res.data;
+        this.tasks = Array.isArray(res.data) ? res.data : [];
       } catch (err) {
+        this.tasks = [];
         this.error = err.message;
       } finally {
         this.loading = false;

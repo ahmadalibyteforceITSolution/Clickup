@@ -2,11 +2,12 @@ import { defineStore } from 'pinia';
 import axios from 'axios';
 
 function extractErrorMessage(err) {
+  if (!err) return 'An unexpected error occurred';
   if (typeof err === 'string') return err;
   if (err.response?.data) {
     if (typeof err.response.data === 'string') return err.response.data;
-    if (err.response.data.error) return err.response.data.error;
-    if (err.response.data.message) return err.response.data.message;
+    if (typeof err.response.data.error === 'string') return err.response.data.error;
+    if (typeof err.response.data.message === 'string') return err.response.data.message;
   }
   return err.message || 'An unexpected error occurred';
 }
@@ -43,12 +44,13 @@ export const useAuthStore = defineStore('auth', {
       this.loading = true;
       try {
         const res = await axios.get('/api/users');
-        this.users = res.data;
+        this.users = Array.isArray(res.data) ? res.data : [];
 
         if (!this.currentUser && this.users.length > 0) {
           this.currentUser = this.users[0];
         }
       } catch (err) {
+        this.users = [];
         this.error = extractErrorMessage(err);
       } finally {
         this.loading = false;
@@ -69,8 +71,9 @@ export const useAuthStore = defineStore('auth', {
         this.authMode = 'verify';
         return res.data;
       } catch (err) {
-        this.error = extractErrorMessage(err);
-        throw new Error(this.error);
+        const msg = extractErrorMessage(err);
+        this.error = msg;
+        throw new Error(msg);
       } finally {
         this.loading = false;
       }
@@ -87,8 +90,9 @@ export const useAuthStore = defineStore('auth', {
         await this.fetchUsers();
         return res.data;
       } catch (err) {
-        this.error = extractErrorMessage(err);
-        throw new Error(this.error);
+        const msg = extractErrorMessage(err);
+        this.error = msg;
+        throw new Error(msg);
       } finally {
         this.loading = false;
       }
@@ -119,8 +123,9 @@ export const useAuthStore = defineStore('auth', {
           this.previewVerificationCode = err.response.data.verificationCode || '';
           this.authMode = 'verify';
         }
-        this.error = extractErrorMessage(err);
-        throw new Error(this.error);
+        const msg = extractErrorMessage(err);
+        this.error = msg;
+        throw new Error(msg);
       } finally {
         this.loading = false;
       }
