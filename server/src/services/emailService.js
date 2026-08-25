@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import mongoose from 'mongoose';
 import EmailLog from '../models/EmailLog.js';
 import AppSetting from '../models/AppSetting.js';
 import dotenv from 'dotenv';
@@ -42,15 +43,28 @@ export async function getTransporter() {
 
   // 2. Check MongoDB app_settings
   try {
-    const hostRow = await AppSetting.findOne({ key: 'smtp_host' });
-    const portRow = await AppSetting.findOne({ key: 'smtp_port' });
-    const userRow = await AppSetting.findOne({ key: 'smtp_user' });
-    const passRow = await AppSetting.findOne({ key: 'smtp_pass' });
+    if (mongoose.connection.readyState === 1) {
+      const hostRow = await AppSetting.findOne({ key: 'smtp_host' });
+      const portRow = await AppSetting.findOne({ key: 'smtp_port' });
+      const userRow = await AppSetting.findOne({ key: 'smtp_user' });
+      const passRow = await AppSetting.findOne({ key: 'smtp_pass' });
 
-    if (userRow && passRow) {
-      if (userRow.value.includes('@gmail.com')) {
+      if (userRow && passRow) {
+        if (userRow.value.includes('@gmail.com')) {
+          transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+              user: userRow.value,
+              pass: passRow.value.replace(/\s+/g, '')
+            }
+          });
+          return transporter;
+        }
+
         transporter = nodemailer.createTransport({
-          service: 'gmail',
+          host: hostRow?.value || 'smtp.gmail.com',
+          port: parseInt(portRow?.value || '587', 10),
+          secure: portRow?.value === '465',
           auth: {
             user: userRow.value,
             pass: passRow.value.replace(/\s+/g, '')
@@ -58,17 +72,6 @@ export async function getTransporter() {
         });
         return transporter;
       }
-
-      transporter = nodemailer.createTransport({
-        host: hostRow?.value || 'smtp.gmail.com',
-        port: parseInt(portRow?.value || '587', 10),
-        secure: portRow?.value === '465',
-        auth: {
-          user: userRow.value,
-          pass: passRow.value.replace(/\s+/g, '')
-        }
-      });
-      return transporter;
     }
   } catch (err) {
     console.warn('Using fallback mock email transporter');
@@ -167,31 +170,41 @@ export async function sendEmail({ toEmail, toName, subject, html, triggerType, t
 
     console.log(`✉️ Email dispatched to ${toEmail} | Message ID: ${info.messageId}`);
 
-    const emailLog = await EmailLog.create({
-      toEmail,
-      toName: toName || toEmail,
-      subject,
-      bodyHtml: html,
-      triggerType,
-      taskId,
-      status: 'delivered'
-    });
+    let logId = null;
+    if (mongoose.connection.readyState === 1) {
+      try {
+        const emailLog = await EmailLog.create({
+          toEmail,
+          toName: toName || toEmail,
+          subject,
+          bodyHtml: html,
+          triggerType,
+          taskId,
+          status: 'delivered'
+        });
+        logId = emailLog._id;
+      } catch (logErr) {
+        console.warn('Could not save email log to DB:', logErr.message);
+      }
+    }
 
-    return { success: true, logId: emailLog._id, messageId: info.messageId };
+    return { success: true, logId, messageId: info.messageId };
   } catch (error) {
     console.error('Failed to send email:', error);
-    try {
-      await EmailLog.create({
-        toEmail,
-        toName: toName || toEmail,
-        subject,
-        bodyHtml: html,
-        triggerType,
-        taskId,
-        status: 'failed: ' + error.message
-      });
-    } catch (e) {
-      console.error('Failed to log email error:', e);
+    if (mongoose.connection.readyState === 1) {
+      try {
+        await EmailLog.create({
+          toEmail,
+          toName: toName || toEmail,
+          subject,
+          bodyHtml: html,
+          triggerType,
+          taskId,
+          status: 'failed: ' + error.message
+        });
+      } catch (e) {
+        console.error('Failed to log email error:', e);
+      }
     }
     return { success: false, error: error.message };
   }
