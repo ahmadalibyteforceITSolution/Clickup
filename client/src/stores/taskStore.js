@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import axios from 'axios';
+import { useAuthStore } from './authStore';
 
 export const useTaskStore = defineStore('tasks', {
   state: () => ({
@@ -55,10 +56,13 @@ export const useTaskStore = defineStore('tasks', {
     filteredTasks: (state) => {
       const taskList = Array.isArray(state.tasks) ? state.tasks : [];
       return taskList.filter(task => {
-        if (state.selectedSpaceId && task.space_id?._id !== state.selectedSpaceId && task.space_id !== state.selectedSpaceId) {
+        const taskSpaceId = String(task.spaceId?._id || task.spaceId || task.space_id?._id || task.space_id || '');
+        const taskListId = String(task.listId?._id || task.listId || task.list_id?._id || task.list_id || '');
+
+        if (state.selectedSpaceId && taskSpaceId && taskSpaceId !== String(state.selectedSpaceId)) {
           return false;
         }
-        if (state.selectedListId && task.list_id?._id !== state.selectedListId && task.list_id !== state.selectedListId) {
+        if (state.selectedListId && taskListId && taskListId !== String(state.selectedListId)) {
           return false;
         }
         if (state.statusFilter && task.status !== state.statusFilter) {
@@ -68,7 +72,7 @@ export const useTaskStore = defineStore('tasks', {
           return false;
         }
         if (state.assigneeFilter) {
-          const hasAssignee = task.assignees?.some(a => (a._id || a.id || a) === state.assigneeFilter);
+          const hasAssignee = task.assignees?.some(a => String(a._id || a.id || a) === String(state.assigneeFilter));
           if (!hasAssignee) return false;
         }
         if (state.showOverdueOnly) {
@@ -157,11 +161,12 @@ export const useTaskStore = defineStore('tasks', {
       this.loading = true;
       try {
         const params = {};
+
         if (this.selectedSpaceId) params.space_id = this.selectedSpaceId;
         if (this.selectedListId) params.list_id = this.selectedListId;
         if (this.statusFilter) params.status = this.statusFilter;
         if (this.priorityFilter) params.priority = this.priorityFilter;
-        if (this.assigneeFilter) params.assignee = this.assigneeFilter;
+        if (this.assigneeFilter) params.assignee_id = this.assigneeFilter;
         if (this.searchQuery) params.search = this.searchQuery;
         if (this.showOverdueOnly) params.overdue = 'true';
 
@@ -175,8 +180,9 @@ export const useTaskStore = defineStore('tasks', {
       }
     },
 
-    async openTaskModal(taskId) {
+    async openTaskModal(taskOrId) {
       try {
+        const taskId = typeof taskOrId === 'object' ? (taskOrId._id || taskOrId.id) : taskOrId;
         const res = await axios.get(`/api/tasks/${taskId}`);
         this.selectedTask = res.data;
         this.taskModalOpen = true;

@@ -37,30 +37,53 @@ async function getPopulatedTask(id) {
   return obj;
 }
 
-// Get all tasks with flexible filtering
+// Get tasks with Role-Based Separation:
+// - Super Admin & Manager: See all company tasks across all spaces
+// - Employee: Only sees tasks assigned to them (or created by them)
 router.get('/', async (req, res) => {
   try {
-    const { list_id, space_id, status, priority, assignee_id, search, overdue } = req.query;
+    const { 
+      list_id, space_id, status, priority, assignee_id, search, overdue, 
+      user_role, user_id 
+    } = req.query;
+    
     const filter = {};
+
+    // Role-based visibility enforcement
+    if (user_role === 'employee' && user_id) {
+      filter.$or = [
+        { assignees: user_id },
+        { creator: user_id }
+      ];
+    }
 
     if (list_id) filter.listId = list_id;
     if (space_id) filter.spaceId = space_id;
     if (status) filter.status = status;
     if (priority) filter.priority = priority;
     if (assignee_id) filter.assignees = assignee_id;
+
     if (search) {
-      filter.$or = [
-        { title: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } }
-      ];
+      const searchRegex = { $regex: search, $options: 'i' };
+      if (filter.$or) {
+        filter.$and = [
+          { $or: filter.$or },
+          { $or: [{ title: searchRegex }, { description: searchRegex }] }
+        ];
+        delete filter.$or;
+      } else {
+        filter.$or = [
+          { title: searchRegex },
+          { description: searchRegex }
+        ];
+      }
     }
+
     if (overdue === 'true') {
       const todayStr = new Date().toISOString().split('T')[0];
       filter.status = { $ne: 'completed' };
       filter.dueDate = { $lt: todayStr, $ne: null };
     }
-
-    const priorityWeight = { urgent: 1, high: 2, normal: 3, low: 4 };
 
     const tasks = await Task.find(filter)
       .populate('creator', 'name email avatar role')
@@ -164,7 +187,7 @@ router.post('/', async (req, res) => {
       assignees: assignee_ids || []
     });
 
-    const creatorUser = creator_id ? await User.findById(creator_id) : { name: 'Manager', role: 'manager', email: 'manager@company.com' };
+    const creatorUser = creator_id ? await User.findById(creator_id) : { name: 'Admin', role: 'super_admin', email: 'admin@company.com' };
 
     // Log creation activity
     await ActivityLog.create({

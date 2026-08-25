@@ -112,10 +112,10 @@
                   </p>
 
                   <span
-                    v-if="task.list?.name"
+                    v-if="task.list?.name || task.listId?.name"
                     class="hidden sm:inline text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-500 font-medium px-2 py-0.5 rounded truncate max-w-[140px]"
                   >
-                    {{ task.list.name }}
+                    {{ task.list?.name || task.listId?.name }}
                   </span>
                 </div>
               </div>
@@ -169,23 +169,24 @@
               <!-- Assignee Avatars Stack -->
               <div class="flex items-center -space-x-1.5">
                 <template v-if="task.assignees && task.assignees.length > 0">
-                  <img
+                  <UserAvatar
                     v-for="a in task.assignees.slice(0, 3)"
                     :key="a._id || a.id"
-                    :src="a.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=user'"
-                    :title="a.name + ' (' + (a.role || 'employee') + ')'"
-                    class="w-6 h-6 rounded-full object-cover ring-2 ring-white dark:ring-[#202225]"
+                    :name="a.name"
+                    :avatar="a.avatar"
+                    size="xs"
+                    customClass="ring-2 ring-white dark:ring-[#202225]"
                   />
                   <span
                     v-if="task.assignees.length > 3"
-                    class="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 text-[10px] font-bold text-slate-600 dark:text-slate-300 flex items-center justify-center ring-2 ring-white dark:ring-[#202225]"
+                    class="w-5 h-5 rounded-full bg-slate-200 dark:bg-slate-700 text-[9px] font-bold text-slate-600 dark:text-slate-300 flex items-center justify-center ring-2 ring-white dark:ring-[#202225]"
                   >
                     +{{ task.assignees.length - 3 }}
                   </span>
                 </template>
                 <span
                   v-else
-                  class="w-6 h-6 rounded-full border border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center text-slate-400"
+                  class="w-5 h-5 rounded-full border border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center text-slate-400 text-[10px]"
                   title="Unassigned"
                 >
                   <User class="w-3 h-3" />
@@ -212,6 +213,7 @@ import { reactive, computed } from 'vue';
 import { 
   ChevronDown, Plus, Check, CheckSquare, MessageSquare, Calendar, User 
 } from 'lucide-vue-next';
+import UserAvatar from '@/components/common/UserAvatar.vue';
 import { useTaskStore } from '@/stores/taskStore';
 import { useAuthStore } from '@/stores/authStore';
 import { format, isBefore, startOfToday } from 'date-fns';
@@ -235,11 +237,11 @@ const collapsedGroups = reactive({
 
 const currentHeaderTitle = computed(() => {
   if (taskStore.selectedListId) {
-    const list = taskStore.allLists.find(l => (l._id || l.id) === taskStore.selectedListId);
+    const list = taskStore.allLists.find(l => String(l._id || l.id) === String(taskStore.selectedListId));
     return list ? list.name : 'List Tasks';
   }
   if (taskStore.selectedSpaceId) {
-    const space = taskStore.spaces.find(s => (s._id || s.id) === taskStore.selectedSpaceId);
+    const space = taskStore.spaces.find(s => String(s._id || s.id) === String(taskStore.selectedSpaceId));
     return space ? space.name : 'Space Tasks';
   }
   return 'All Workspace Tasks';
