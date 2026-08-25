@@ -9,7 +9,7 @@
       <div class="px-6 py-4 border-b border-slate-100 dark:border-[#2F3136] flex items-center justify-between bg-slate-50/50 dark:bg-[#18191B]/50">
         <h3 class="text-sm font-extrabold text-slate-900 dark:text-white flex items-center space-x-2">
           <UserIcon class="w-4 h-4 text-purple-600 dark:text-purple-400" />
-          <span>{{ isEditingOther ? `Edit Profile: ${profileForm.name}` : 'Edit My Profile & Picture' }}</span>
+          <span>{{ isEditingOther ? `Edit Member: ${profileForm.name}` : 'Edit My Profile & Credentials' }}</span>
         </h3>
         <button @click="close" class="text-slate-400 hover:text-slate-600">
           <X class="w-4 h-4" />
@@ -122,6 +122,34 @@
           </div>
         </div>
 
+        <!-- Reset / Change Password (Super Admin or Self) -->
+        <div class="pt-2 border-t border-slate-100 dark:border-[#2F3136]">
+          <div class="flex items-center justify-between mb-1">
+            <label class="block text-[11px] font-bold text-slate-500 uppercase flex items-center space-x-1">
+              <KeyRound class="w-3.5 h-3.5 text-purple-500" />
+              <span>{{ isEditingOther ? 'Reset Employee Password' : 'Change My Password' }}</span>
+            </label>
+            <span class="text-[10px] text-slate-400">(Leave blank to keep current)</span>
+          </div>
+
+          <div class="relative">
+            <input
+              v-model="newPassword"
+              :type="showPassword ? 'text' : 'password'"
+              placeholder="Enter new password (min 6 characters)"
+              class="w-full pl-3 pr-10 py-2 text-xs bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] focus:border-purple-500 rounded-xl text-slate-900 dark:text-white focus:outline-none font-medium"
+            />
+            <button
+              type="button"
+              @click="showPassword = !showPassword"
+              class="absolute right-3 top-2 text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 p-1"
+            >
+              <EyeOff v-if="showPassword" class="w-3.5 h-3.5" />
+              <Eye v-else class="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+
         <!-- Action Buttons -->
         <div class="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-[#2F3136]">
           <!-- Delete User Button (Super Admin only, cannot delete self if only 1 admin) -->
@@ -160,7 +188,7 @@
 
 <script setup>
 import { ref, reactive, computed, watch } from 'vue';
-import { X, User as UserIcon, Camera, Upload, Trash2 } from 'lucide-vue-next';
+import { X, User as UserIcon, Camera, Upload, Trash2, KeyRound, Eye, EyeOff } from 'lucide-vue-next';
 import UserAvatar from '@/components/common/UserAvatar.vue';
 import { useAuthStore } from '@/stores/authStore';
 import { useTaskStore } from '@/stores/taskStore';
@@ -183,6 +211,9 @@ const previewAvatar = ref(null);
 const avatarFile = ref(null);
 const saving = ref(false);
 
+const newPassword = ref('');
+const showPassword = ref(false);
+
 const activeTarget = computed(() => props.targetUser || authStore.currentUser);
 const isEditingOther = computed(() => {
   if (!props.targetUser || !authStore.currentUser) return false;
@@ -196,7 +227,7 @@ const profileForm = reactive({
   email: '',
   role: 'employee',
   job_title: '',
-  department: '',
+  department: 'SMM',
   avatar: ''
 });
 
@@ -206,10 +237,12 @@ watch(() => props.isOpen, (open) => {
     profileForm.email = activeTarget.value.email || '';
     profileForm.role = activeTarget.value.role || 'employee';
     profileForm.job_title = activeTarget.value.job_title || '';
-    profileForm.department = activeTarget.value.department || 'Engineering';
+    profileForm.department = activeTarget.value.department || 'SMM';
     profileForm.avatar = activeTarget.value.avatar || '';
     previewAvatar.value = null;
     avatarFile.value = null;
+    newPassword.value = '';
+    showPassword.value = false;
   }
 });
 
@@ -270,9 +303,22 @@ async function handleSaveProfile() {
       payload.role = profileForm.role;
     }
 
+    if (newPassword.value.trim()) {
+      if (newPassword.value.trim().length < 6) {
+        uiStore.error('Password must be at least 6 characters');
+        saving.value = false;
+        return;
+      }
+      payload.password = newPassword.value.trim();
+    }
+
     await authStore.updateProfile(userId, payload);
     await taskStore.fetchTasks();
-    uiStore.success('Profile saved successfully');
+    uiStore.success(
+      newPassword.value.trim() 
+        ? `Profile & Password updated for ${profileForm.name}` 
+        : `Profile saved successfully for ${profileForm.name}`
+    );
     close();
   } catch (err) {
     uiStore.error('Failed to update profile: ' + (err.response?.data?.error || err.message));
