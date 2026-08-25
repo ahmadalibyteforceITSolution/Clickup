@@ -8,10 +8,10 @@ import { notifyNewComment } from '../services/emailService.js';
 
 const router = express.Router();
 
-// Get comments for a task
-router.get('/task/:taskId', async (req, res) => {
+async function handleGetComments(req, res) {
   try {
-    const comments = await Comment.find({ taskId: req.params.taskId })
+    const taskId = req.params.taskId || req.params.id;
+    const comments = await Comment.find({ taskId })
       .populate('user', 'name email avatar role department')
       .sort({ createdAt: 1 });
 
@@ -31,12 +31,11 @@ router.get('/task/:taskId', async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
-});
+}
 
-// Add comment to a task
-router.post('/task/:taskId', async (req, res) => {
+async function handleCreateComment(req, res) {
   try {
-    const { taskId } = req.params;
+    const taskId = req.params.taskId || req.params.id;
     const { user_id, content } = req.body;
 
     if (!content || !content.trim()) {
@@ -62,7 +61,7 @@ router.post('/task/:taskId', async (req, res) => {
     });
 
     // Notify task assignees & creator
-    const recipientIds = [...task.assignees];
+    const recipientIds = [...(task.assignees || [])];
     if (task.creator && !recipientIds.some(id => String(id) === String(task.creator))) {
       recipientIds.push(task.creator);
     }
@@ -101,7 +100,16 @@ router.post('/task/:taskId', async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
-});
+}
+
+// Support both /task/:taskId and /tasks/:taskId (and /:taskId)
+router.get('/task/:taskId', handleGetComments);
+router.get('/tasks/:taskId', handleGetComments);
+router.get('/:taskId', handleGetComments);
+
+router.post('/task/:taskId', handleCreateComment);
+router.post('/tasks/:taskId', handleCreateComment);
+router.post('/:taskId', handleCreateComment);
 
 // Delete comment
 router.delete('/:id', async (req, res) => {

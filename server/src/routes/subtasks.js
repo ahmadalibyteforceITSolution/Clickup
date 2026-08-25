@@ -4,21 +4,20 @@ import ActivityLog from '../models/ActivityLog.js';
 
 const router = express.Router();
 
-// Get subtasks for a task
-router.get('/task/:taskId', async (req, res) => {
+async function handleGetSubtasks(req, res) {
   try {
-    const task = await Task.findById(req.params.taskId).populate('subtasks.assignee', 'name email avatar');
+    const taskId = req.params.taskId || req.params.id;
+    const task = await Task.findById(taskId).populate('subtasks.assignee', 'name email avatar');
     if (!task) return res.status(404).json({ error: 'Task not found' });
     res.json(task.subtasks);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
-});
+}
 
-// Add subtask to a task
-router.post('/task/:taskId', async (req, res) => {
+async function handleAddSubtask(req, res) {
   try {
-    const { taskId } = req.params;
+    const taskId = req.params.taskId || req.params.id;
     const { title, due_date, assignee_id, user_id } = req.body;
 
     if (!title || !title.trim()) {
@@ -50,15 +49,23 @@ router.post('/task/:taskId', async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
-});
+}
+
+// Support both /task/:taskId and /tasks/:taskId
+router.get('/task/:taskId', handleGetSubtasks);
+router.get('/tasks/:taskId', handleGetSubtasks);
+router.get('/:taskId', handleGetSubtasks);
+
+router.post('/task/:taskId', handleAddSubtask);
+router.post('/tasks/:taskId', handleAddSubtask);
+router.post('/:taskId', handleAddSubtask);
 
 // Toggle / update subtask
 router.put('/:subtaskId', async (req, res) => {
   try {
     const { subtaskId } = req.params;
-    const { completed, title, due_date, assignee_id, user_id, task_id } = req.body;
+    const { completed, title, due_date, assignee_id, user_id } = req.body;
 
-    // Find task containing this subtask
     const task = await Task.findOne({ 'subtasks._id': subtaskId });
     if (!task) return res.status(404).json({ error: 'Subtask not found' });
 
