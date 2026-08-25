@@ -33,6 +33,8 @@ export const useTaskStore = defineStore('tasks', {
   }),
 
   getters: {
+    activeTask: (state) => state.selectedTask,
+
     allLists: (state) => {
       const result = [];
       const spaceList = Array.isArray(state.spaces) ? state.spaces : [];
@@ -147,6 +149,11 @@ export const useTaskStore = defineStore('tasks', {
       this.sidebarMobileOpen = !this.sidebarMobileOpen;
     },
 
+    closeTaskModal() {
+      this.taskModalOpen = false;
+      this.selectedTask = null;
+    },
+
     async fetchSpaces() {
       try {
         const res = await axios.get('/api/spaces');
@@ -163,7 +170,6 @@ export const useTaskStore = defineStore('tasks', {
         const authStore = useAuthStore();
         const params = {};
 
-        // Pass user role and ID so employees only get their assigned tasks
         if (authStore.currentUser) {
           params.user_role = authStore.currentUser.role;
           params.user_id = authStore.currentUser._id || authStore.currentUser.id;
@@ -193,6 +199,16 @@ export const useTaskStore = defineStore('tasks', {
         const res = await axios.get(`/api/tasks/${taskId}`);
         this.selectedTask = res.data;
         this.taskModalOpen = true;
+      } catch (err) {
+        this.error = err.message;
+      }
+    },
+
+    async fetchTaskDetails(taskId) {
+      try {
+        const res = await axios.get(`/api/tasks/${taskId}`);
+        this.selectedTask = res.data;
+        return res.data;
       } catch (err) {
         this.error = err.message;
       }

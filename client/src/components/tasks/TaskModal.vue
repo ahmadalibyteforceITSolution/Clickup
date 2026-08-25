@@ -1,51 +1,54 @@
 <template>
   <div
     v-if="taskStore.taskModalOpen && task"
-    class="fixed inset-0 bg-black/60 backdrop-blur-xs flex justify-end z-50 animate-fade-in"
+    class="fixed inset-0 bg-black/70 backdrop-blur-sm flex justify-end z-50 animate-fade-in"
     @click.self="taskStore.closeTaskModal()"
   >
     <div class="w-full max-w-3xl bg-white dark:bg-[#202225] h-full shadow-2xl flex flex-col border-l border-slate-200 dark:border-[#2F3136] overflow-hidden">
       <!-- Top Action Bar -->
-      <div class="h-14 px-6 border-b border-slate-200 dark:border-[#2F3136] flex items-center justify-between shrink-0 bg-slate-50/50 dark:bg-[#18191B]/50">
-        <div class="flex items-center space-x-2">
+      <div class="h-16 px-6 border-b border-slate-200 dark:border-[#2F3136] flex items-center justify-between shrink-0 bg-slate-50/70 dark:bg-[#18191B]/70">
+        <div class="flex items-center space-x-3">
           <!-- Status Dropdown -->
           <div class="relative">
             <select
               v-model="statusValue"
               @change="handleStatusChange"
-              class="appearance-none font-bold text-xs uppercase pl-3 pr-7 py-1.5 rounded-lg border text-white cursor-pointer shadow-xs focus:outline-none"
+              class="appearance-none font-extrabold text-xs uppercase pl-3 pr-7 py-2 rounded-xl text-white cursor-pointer shadow-md focus:outline-none transition-all"
               :style="{ backgroundColor: getStatusColor(statusValue) }"
             >
-              <option value="pending" class="bg-white text-slate-900 dark:bg-[#202225] dark:text-white">Pending</option>
-              <option value="in_progress" class="bg-white text-slate-900 dark:bg-[#202225] dark:text-white">In Progress</option>
-              <option value="review" class="bg-white text-slate-900 dark:bg-[#202225] dark:text-white">Review</option>
-              <option value="completed" class="bg-white text-slate-900 dark:bg-[#202225] dark:text-white">Completed</option>
+              <option value="pending" class="bg-white text-slate-900 dark:bg-[#202225] dark:text-white">⏳ Pending</option>
+              <option value="in_progress" class="bg-white text-slate-900 dark:bg-[#202225] dark:text-white">🚀 In Progress</option>
+              <option value="review" class="bg-white text-slate-900 dark:bg-[#202225] dark:text-white">🔍 In Review</option>
+              <option value="completed" class="bg-white text-slate-900 dark:bg-[#202225] dark:text-white">✅ Completed</option>
             </select>
-            <ChevronDown class="w-3.5 h-3.5 text-white absolute right-2 top-2.5 pointer-events-none" />
+            <ChevronDown class="w-3.5 h-3.5 text-white absolute right-2.5 top-3 pointer-events-none" />
           </div>
 
-          <!-- Priority Dropdown -->
-          <div class="relative">
+          <!-- Priority Dropdown (Admin only) -->
+          <div v-if="authStore.isSuperAdmin || authStore.isManager" class="relative">
             <select
               v-model="priorityValue"
               @change="handlePriorityChange"
-              class="appearance-none font-bold text-xs uppercase pl-3 pr-7 py-1.5 rounded-lg border border-slate-200 dark:border-[#2F3136] bg-white dark:bg-[#202225] text-slate-700 dark:text-slate-200 cursor-pointer focus:outline-none"
+              class="appearance-none font-extrabold text-xs uppercase pl-3 pr-7 py-2 rounded-xl border border-slate-200 dark:border-[#2F3136] bg-white dark:bg-[#202225] text-slate-700 dark:text-slate-200 cursor-pointer focus:outline-none shadow-xs"
             >
               <option value="urgent">🔴 Urgent</option>
               <option value="high">🟠 High</option>
               <option value="normal">🔵 Normal</option>
               <option value="low">⚪ Low</option>
             </select>
-            <ChevronDown class="w-3.5 h-3.5 text-slate-400 absolute right-2 top-2.5 pointer-events-none" />
+            <ChevronDown class="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-3 pointer-events-none" />
           </div>
+          <span v-else class="text-xs font-bold uppercase px-3 py-1.5 rounded-xl border border-slate-200 dark:border-[#2F3136] text-slate-600 dark:text-slate-300">
+            {{ priorityValue }} Priority
+          </span>
         </div>
 
         <div class="flex items-center space-x-2">
-          <!-- Delete Task Button -->
+          <!-- Delete Task Button (Super Admin / Manager Only) -->
           <button
-            v-if="authStore.isManager"
+            v-if="authStore.isSuperAdmin || authStore.isManager"
             @click="confirmDeleteTask"
-            class="p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
+            class="p-2 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
             title="Delete Task"
           >
             <Trash2 class="w-4 h-4" />
@@ -54,55 +57,73 @@
           <!-- Close Modal -->
           <button
             @click="taskStore.closeTaskModal()"
-            class="p-2 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#292B2F] transition-colors"
+            class="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#292B2F] transition-colors"
           >
             <X class="w-5 h-5" />
           </button>
         </div>
       </div>
 
-      <!-- Main Body Container with Two Panes / Tabs -->
+      <!-- Main Body Container -->
       <div class="flex-1 overflow-y-auto p-6 space-y-6">
-        <!-- Title Input -->
+        <!-- Title Input (Editable by Admin, Read-only for Employee) -->
         <div>
           <input
+            v-if="authStore.isSuperAdmin || authStore.isManager"
             v-model="titleValue"
             @blur="saveTaskTitle"
             @keyup.enter="$event.target.blur()"
             type="text"
-            class="w-full text-xl font-black text-slate-900 dark:text-white bg-transparent border-b border-transparent hover:border-slate-200 dark:hover:border-slate-700 focus:border-purple-500 pb-1 focus:outline-none transition-colors"
+            class="w-full text-2xl font-black text-slate-900 dark:text-white bg-transparent border-b border-transparent hover:border-slate-200 dark:hover:border-slate-700 focus:border-purple-500 pb-1 focus:outline-none transition-colors"
             placeholder="Task title..."
           />
+          <h2 v-else class="text-2xl font-black text-slate-900 dark:text-white">
+            {{ titleValue }}
+          </h2>
         </div>
 
         <!-- Task Metadata Properties Grid -->
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 bg-slate-50 dark:bg-[#18191B] rounded-xl border border-slate-200/80 dark:border-[#2F3136]">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 bg-slate-50 dark:bg-[#18191B] rounded-2xl border border-slate-200/80 dark:border-[#2F3136]">
           <!-- Assignees -->
           <div>
             <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Assignees</span>
             <div class="relative">
               <button
+                v-if="authStore.isSuperAdmin || authStore.isManager"
                 @click="assigneeDropdownOpen = !assigneeDropdownOpen"
-                class="flex items-center space-x-1.5 p-1 rounded hover:bg-slate-200/60 dark:hover:bg-slate-800 transition-colors"
+                class="flex items-center space-x-1.5 p-1 rounded-lg hover:bg-slate-200/60 dark:hover:bg-slate-800 transition-colors"
               >
-                <div class="flex items-center -space-x-1">
+                <div class="flex items-center -space-x-1.5">
                   <template v-if="task.assignees && task.assignees.length > 0">
-                    <img
+                    <UserAvatar
                       v-for="a in task.assignees"
                       :key="a._id || a.id"
-                      :src="a.avatar"
-                      :title="a.name"
-                      class="w-6 h-6 rounded-full object-cover ring-2 ring-white dark:ring-[#18191B]"
+                      :name="a.name"
+                      :avatar="a.avatar"
+                      size="xs"
                     />
                   </template>
-                  <span v-else class="text-xs text-slate-500 font-medium">+ Assign Team</span>
+                  <span v-else class="text-xs text-purple-600 dark:text-purple-400 font-bold">+ Assign Team</span>
                 </div>
               </button>
+
+              <div v-else class="flex items-center -space-x-1.5">
+                <template v-if="task.assignees && task.assignees.length > 0">
+                  <UserAvatar
+                    v-for="a in task.assignees"
+                    :key="a._id || a.id"
+                    :name="a.name"
+                    :avatar="a.avatar"
+                    size="xs"
+                  />
+                </template>
+                <span v-else class="text-xs text-slate-400">Unassigned</span>
+              </div>
 
               <!-- Assignee Multi-Picker Dropdown -->
               <div
                 v-if="assigneeDropdownOpen"
-                class="absolute left-0 mt-2 w-64 bg-white dark:bg-[#202225] rounded-xl shadow-2xl border border-slate-200 dark:border-[#2F3136] p-2 z-50 animate-fade-in"
+                class="absolute left-0 mt-2 w-64 bg-white dark:bg-[#202225] rounded-2xl shadow-2xl border border-slate-200 dark:border-[#2F3136] p-2 z-50 animate-fade-in"
               >
                 <p class="text-[11px] font-bold text-slate-400 uppercase px-2 py-1">Assign to Employee</p>
                 <div class="max-h-48 overflow-y-auto space-y-0.5">
@@ -110,10 +131,10 @@
                     v-for="u in authStore.users"
                     :key="u._id || u.id"
                     @click="toggleAssignee(u._id || u.id)"
-                    class="w-full flex items-center justify-between px-2 py-1.5 rounded hover:bg-purple-50 dark:hover:bg-purple-950/30 text-xs font-semibold"
+                    class="w-full flex items-center justify-between px-2 py-1.5 rounded-xl hover:bg-purple-50 dark:hover:bg-purple-950/30 text-xs font-semibold"
                   >
                     <div class="flex items-center space-x-2">
-                      <img :src="u.avatar" class="w-5 h-5 rounded-full object-cover" />
+                      <UserAvatar :name="u.name" :avatar="u.avatar" size="xs" />
                       <span class="text-slate-800 dark:text-slate-200">{{ u.name }}</span>
                     </div>
                     <Check
@@ -132,8 +153,9 @@
             <input
               type="date"
               v-model="startDateValue"
+              :disabled="!authStore.isSuperAdmin && !authStore.isManager"
               @change="handleScheduleChange"
-              class="w-full text-xs font-semibold bg-white dark:bg-[#202225] border border-slate-200 dark:border-[#2F3136] rounded-lg px-2 py-1 text-slate-800 dark:text-slate-200 focus:outline-none"
+              class="w-full text-xs font-semibold bg-white dark:bg-[#202225] border border-slate-200 dark:border-[#2F3136] rounded-xl px-2.5 py-1.5 text-slate-800 dark:text-slate-200 focus:outline-none disabled:opacity-60"
             />
           </div>
 
@@ -143,8 +165,9 @@
             <input
               type="date"
               v-model="dueDateValue"
+              :disabled="!authStore.isSuperAdmin && !authStore.isManager"
               @change="handleScheduleChange"
-              class="w-full text-xs font-semibold bg-white dark:bg-[#202225] border border-slate-200 dark:border-[#2F3136] rounded-lg px-2 py-1 text-slate-800 dark:text-slate-200 focus:outline-none"
+              class="w-full text-xs font-semibold bg-white dark:bg-[#202225] border border-slate-200 dark:border-[#2F3136] rounded-xl px-2.5 py-1.5 text-slate-800 dark:text-slate-200 focus:outline-none disabled:opacity-60"
             />
           </div>
 
@@ -155,26 +178,31 @@
               <input
                 type="number"
                 v-model="timeEstimateValue"
+                :disabled="!authStore.isSuperAdmin && !authStore.isManager"
                 @blur="handleTimeEstimateChange"
                 min="0"
                 step="30"
-                class="w-16 text-xs font-semibold bg-white dark:bg-[#202225] border border-slate-200 dark:border-[#2F3136] rounded-lg px-2 py-1 text-slate-800 dark:text-slate-200 focus:outline-none"
+                class="w-16 text-xs font-semibold bg-white dark:bg-[#202225] border border-slate-200 dark:border-[#2F3136] rounded-xl px-2 py-1.5 text-slate-800 dark:text-slate-200 focus:outline-none disabled:opacity-60"
               />
-              <span class="text-xs text-slate-400">mins</span>
+              <span class="text-xs text-slate-400 font-bold">mins</span>
             </div>
           </div>
         </div>
 
         <!-- Description Box -->
         <div class="space-y-2">
-          <label class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Description</label>
+          <label class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Description & Instructions</label>
           <textarea
+            v-if="authStore.isSuperAdmin || authStore.isManager"
             v-model="descriptionValue"
             @blur="saveDescription"
             rows="3"
-            class="w-full p-3 bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] focus:border-purple-500 rounded-xl text-xs sm:text-sm text-slate-800 dark:text-slate-200 focus:outline-none leading-relaxed"
+            class="w-full p-3.5 bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] focus:border-purple-500 rounded-2xl text-xs sm:text-sm text-slate-800 dark:text-slate-200 focus:outline-none leading-relaxed"
             placeholder="Add detailed task specifications, instructions, or goals..."
           ></textarea>
+          <div v-else class="p-3.5 bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] rounded-2xl text-xs sm:text-sm text-slate-800 dark:text-slate-200 whitespace-pre-wrap">
+            {{ descriptionValue || 'No description provided.' }}
+          </div>
         </div>
 
         <!-- Subtasks & Checklist Section -->
@@ -192,11 +220,11 @@
               v-model="newSubtaskTitle"
               type="text"
               placeholder="+ Add a subtask checklist item..."
-              class="flex-1 px-3 py-1.5 text-xs bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] focus:border-purple-500 rounded-lg text-slate-800 dark:text-slate-200 focus:outline-none"
+              class="flex-1 px-3.5 py-2 text-xs bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] focus:border-purple-500 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none"
             />
             <button
               type="submit"
-              class="bg-purple-600 hover:bg-purple-700 text-white font-semibold text-xs px-3 py-1.5 rounded-lg transition-colors"
+              class="bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs px-4 py-2 rounded-xl transition-colors"
             >
               Add
             </button>
@@ -218,7 +246,7 @@
                 />
                 <span
                   :class="[
-                    'truncate font-medium',
+                    'truncate font-semibold',
                     sub.completed ? 'line-through text-slate-400' : 'text-slate-800 dark:text-slate-200'
                   ]"
                 >
@@ -236,44 +264,7 @@
           </div>
         </div>
 
-        <!-- Attachments & Files Section -->
-        <div class="space-y-3">
-          <div class="flex items-center justify-between">
-            <h4 class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center space-x-2">
-              <Paperclip class="w-4 h-4 text-purple-500" />
-              <span>Attachments ({{ attachments.length }})</span>
-            </h4>
-
-            <label class="cursor-pointer text-xs text-purple-600 dark:text-purple-400 font-semibold hover:underline flex items-center space-x-1">
-              <Upload class="w-3.5 h-3.5" />
-              <span>Upload File</span>
-              <input type="file" @change="handleFileUpload" class="hidden" />
-            </label>
-          </div>
-
-          <div v-if="attachments.length > 0" class="grid grid-cols-2 gap-2">
-            <div
-              v-for="file in attachments"
-              :key="file._id || file.id"
-              class="p-2.5 rounded-lg bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] flex items-center justify-between text-xs"
-            >
-              <div class="flex items-center space-x-2 truncate">
-                <FileText class="w-4 h-4 text-purple-500 shrink-0" />
-                <span class="truncate font-semibold text-slate-800 dark:text-slate-200">{{ file.originalName || file.filename }}</span>
-              </div>
-              <a
-                :href="file.filePath"
-                target="_blank"
-                class="text-slate-400 hover:text-purple-600 p-1"
-                title="Download file"
-              >
-                <ExternalLink class="w-3.5 h-3.5" />
-              </a>
-            </div>
-          </div>
-        </div>
-
-        <!-- Comments & Activity Timeline -->
+        <!-- Comments, Delay/Blocker Reasons & Discussion Thread -->
         <div class="space-y-4 pt-4 border-t border-slate-200 dark:border-[#2F3136]">
           <div class="flex items-center space-x-4 border-b border-slate-100 dark:border-[#2F3136] pb-2">
             <button
@@ -285,7 +276,7 @@
                   : 'border-transparent text-slate-400 hover:text-slate-600'
               ]"
             >
-              Comments & Discussion ({{ comments.length }})
+              💬 Discussion & Status Reasons ({{ comments.length }})
             </button>
             <button
               @click="activeTab = 'activity'"
@@ -296,7 +287,7 @@
                   : 'border-transparent text-slate-400 hover:text-slate-600'
               ]"
             >
-              Activity Audit Trail
+              📜 Activity Audit Log
             </button>
           </div>
 
@@ -304,25 +295,28 @@
           <div v-if="activeTab === 'comments'" class="space-y-4">
             <!-- Add Comment Form -->
             <form @submit.prevent="handlePostComment" class="flex items-start space-x-3">
-              <img
-                :src="authStore.currentUser?.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=user'"
-                class="w-7 h-7 rounded-full object-cover shrink-0 mt-1"
+              <UserAvatar
+                :name="authStore.currentUser?.name"
+                :avatar="authStore.currentUser?.avatar"
+                size="sm"
+                customClass="mt-1 shrink-0"
               />
               <div class="flex-1 space-y-2">
                 <textarea
                   v-model="newCommentText"
                   rows="2"
-                  placeholder="Write a comment... (triggers email notification to assignees)"
-                  class="w-full p-2.5 text-xs bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] focus:border-purple-500 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none"
+                  placeholder="Post an update, explain delay reasons, blockers, or completion notes..."
+                  class="w-full p-3 text-xs bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] focus:border-purple-500 rounded-2xl text-slate-800 dark:text-slate-200 focus:outline-none"
                 ></textarea>
-                <div class="flex justify-end">
+                <div class="flex items-center justify-between">
+                  <span class="text-[11px] text-slate-400">⚡ Dispatches email alert to team</span>
                   <button
                     type="submit"
                     :disabled="!newCommentText.trim()"
-                    class="bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white font-semibold text-xs px-3 py-1.5 rounded-lg transition-colors flex items-center space-x-1.5"
+                    class="bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white font-bold text-xs px-4 py-2 rounded-xl transition-colors flex items-center space-x-1.5 shadow-sm"
                   >
                     <Send class="w-3.5 h-3.5" />
-                    <span>Send Comment</span>
+                    <span>Post Comment</span>
                   </button>
                 </div>
               </div>
@@ -333,13 +327,13 @@
               <div
                 v-for="c in comments"
                 :key="c._id || c.id"
-                class="p-3 bg-slate-50/70 dark:bg-[#18191B]/70 rounded-xl border border-slate-100 dark:border-[#2F3136] space-y-1"
+                class="p-3.5 bg-slate-50/80 dark:bg-[#18191B]/80 rounded-2xl border border-slate-100 dark:border-[#2F3136] space-y-1.5"
               >
                 <div class="flex items-center justify-between">
                   <div class="flex items-center space-x-2">
-                    <img :src="c.user_avatar || c.user?.avatar" class="w-5 h-5 rounded-full object-cover" />
+                    <UserAvatar :name="c.user_name || c.user?.name" :avatar="c.user_avatar || c.user?.avatar" size="xs" />
                     <span class="text-xs font-bold text-slate-800 dark:text-slate-200">{{ c.user_name || c.user?.name }}</span>
-                    <span class="text-[10px] bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 uppercase px-1.5 rounded font-bold">
+                    <span class="text-[10px] bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 uppercase px-2 py-0.5 rounded-full font-extrabold">
                       {{ c.user_role || c.user?.role }}
                     </span>
                   </div>
@@ -347,21 +341,28 @@
                 </div>
                 <p class="text-xs text-slate-700 dark:text-slate-300 pl-7 leading-relaxed whitespace-pre-wrap">{{ c.content }}</p>
               </div>
+
+              <div v-if="comments.length === 0" class="py-6 text-center text-xs text-slate-400 italic">
+                No discussion comments yet. Add a comment above to give status updates or explain blockers.
+              </div>
             </div>
           </div>
 
-          <!-- Activity Audit Trail Tab -->
+          <!-- Activity Audit Log Tab -->
           <div v-else-if="activeTab === 'activity'" class="space-y-2">
             <div
               v-for="act in activityLogs"
               :key="act._id || act.id"
-              class="p-2.5 text-xs rounded-lg bg-slate-50 dark:bg-[#18191B] border border-slate-100 dark:border-[#2F3136] flex items-center justify-between"
+              class="p-3 text-xs rounded-xl bg-slate-50 dark:bg-[#18191B] border border-slate-100 dark:border-[#2F3136] flex items-center justify-between"
             >
-              <div class="flex items-center space-x-2">
+              <div class="flex items-center space-x-2.5">
                 <span class="w-2 h-2 rounded-full bg-purple-500"></span>
-                <span class="text-slate-800 dark:text-slate-200 font-medium">{{ act.details }}</span>
+                <span class="text-slate-800 dark:text-slate-200 font-semibold">{{ act.details }}</span>
               </div>
               <span class="text-[10px] text-slate-400">{{ formatTime(act.created_at || act.createdAt) }}</span>
+            </div>
+            <div v-if="activityLogs.length === 0" class="py-6 text-center text-xs text-slate-400 italic">
+              No activity logs recorded yet.
             </div>
           </div>
         </div>
@@ -373,8 +374,9 @@
 <script setup>
 import { ref, computed, watch } from 'vue';
 import { 
-  X, ChevronDown, Trash2, Check, CheckSquare, Paperclip, Upload, FileText, ExternalLink, Send 
+  X, ChevronDown, Trash2, Check, CheckSquare, Send 
 } from 'lucide-vue-next';
+import UserAvatar from '@/components/common/UserAvatar.vue';
 import { useTaskStore } from '@/stores/taskStore';
 import { useAuthStore } from '@/stores/authStore';
 import axios from 'axios';
@@ -398,7 +400,6 @@ const activeTab = ref('comments');
 const newSubtaskTitle = ref('');
 const newCommentText = ref('');
 const comments = ref([]);
-const attachments = ref([]);
 const activityLogs = ref([]);
 
 watch(() => taskStore.activeTask, (t) => {
@@ -411,7 +412,6 @@ watch(() => taskStore.activeTask, (t) => {
     dueDateValue.value = t.dueDate || t.due_date || '';
     timeEstimateValue.value = t.timeEstimate || t.time_estimate || 0;
     fetchComments();
-    fetchAttachments();
     fetchActivity();
   }
 }, { immediate: true });
@@ -424,25 +424,21 @@ const completedSubtasksCount = computed(() => {
 async function fetchComments() {
   if (!task.value) return;
   try {
-    const res = await axios.get(`/api/comments/task/${task.value._id || task.value.id}`);
-    comments.value = res.data;
-  } catch (e) {}
-}
-
-async function fetchAttachments() {
-  if (!task.value) return;
-  try {
-    const res = await axios.get(`/api/attachments/task/${task.value._id || task.value.id}`);
-    attachments.value = res.data;
-  } catch (e) {}
+    const res = await axios.get(`/api/comments/tasks/${task.value._id || task.value.id}`);
+    comments.value = Array.isArray(res.data) ? res.data : [];
+  } catch (e) {
+    comments.value = [];
+  }
 }
 
 async function fetchActivity() {
   if (!task.value) return;
   try {
     const res = await axios.get(`/api/analytics/activity`, { params: { task_id: task.value._id || task.value.id } });
-    activityLogs.value = res.data;
-  } catch (e) {}
+    activityLogs.value = Array.isArray(res.data) ? res.data : [];
+  } catch (e) {
+    activityLogs.value = [];
+  }
 }
 
 async function saveTaskTitle() {
@@ -548,32 +544,16 @@ async function handleDeleteSubtask(subId) {
   }
 }
 
-async function handleFileUpload(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('user_id', authStore.currentUser?._id || authStore.currentUser?.id || '');
-
-  try {
-    await axios.post(`/api/attachments/task/${task.value._id || task.value.id}`, formData);
-    fetchAttachments();
-  } catch (err) {
-    alert('Upload failed: ' + err.message);
-  }
-}
-
 async function handlePostComment() {
   if (!newCommentText.value.trim()) return;
   try {
-    await axios.post(`/api/comments/task/${task.value._id || task.value.id}`, {
+    await axios.post(`/api/comments/tasks/${task.value._id || task.value.id}`, {
       content: newCommentText.value.trim(),
       user_id: authStore.currentUser?._id || authStore.currentUser?.id
     });
     newCommentText.value = '';
-    fetchComments();
-    fetchActivity();
+    await fetchComments();
+    await fetchActivity();
   } catch (err) {
     alert('Failed to post comment: ' + err.message);
   }
