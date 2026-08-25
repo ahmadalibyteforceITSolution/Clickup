@@ -14,6 +14,7 @@ import attachmentsRouter from '../server/src/routes/attachments.js';
 import analyticsRouter from '../server/src/routes/analytics.js';
 import emailsRouter from '../server/src/routes/emails.js';
 import notificationsRouter from '../server/src/routes/notifications.js';
+import campaignsRouter from '../server/src/routes/campaigns.js';
 
 dotenv.config();
 
@@ -61,6 +62,9 @@ app.use('/emails', emailsRouter);
 
 app.use('/api/notifications', notificationsRouter);
 app.use('/notifications', notificationsRouter);
+
+app.use('/api/campaigns', campaignsRouter);
+app.use('/campaigns', campaignsRouter);
 
 // Global error handler
 app.use((err, req, res, next) => {

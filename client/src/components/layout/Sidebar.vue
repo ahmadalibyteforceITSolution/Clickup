@@ -393,7 +393,7 @@
 <script setup>
 import { ref } from 'vue';
 import { 
-  Layers, LayoutGrid, List, Kanban, Calendar, GanttChartSquare, BarChart3, Plus, Users, X, ChevronLeft, ChevronRight, Edit3 
+  Layers, LayoutGrid, List, Kanban, Calendar, GanttChartSquare, BarChart3, Plus, Users, X, ChevronLeft, ChevronRight, Edit3, Share2 
 } from 'lucide-vue-next';
 import UserAvatar from '@/components/common/UserAvatar.vue';
 import EditProfileModal from '@/components/settings/EditProfileModal.vue';
@@ -410,7 +410,8 @@ const viewOptions = [
   { id: 'board', label: 'Kanban Board', icon: Kanban },
   { id: 'calendar', label: 'Calendar Schedule', icon: Calendar },
   { id: 'gantt', label: 'Gantt Timeline', icon: GanttChartSquare },
-  { id: 'dashboard', label: 'Dashboard & Metrics', icon: BarChart3 }
+  { id: 'dashboard', label: 'Dashboard & Metrics', icon: BarChart3 },
+  { id: 'smm', label: 'SMM & Campaign Sheets', icon: Share2 }
 ];
 
 // Custom Modals State

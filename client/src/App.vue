@@ -18,6 +18,7 @@
         <CalendarView v-else-if="taskStore.activeView === 'calendar'" />
         <GanttView v-else-if="taskStore.activeView === 'gantt'" />
         <DashboardView v-else-if="taskStore.activeView === 'dashboard'" />
+        <SmmSheetView v-else-if="taskStore.activeView === 'smm'" />
       </main>
     </div>
 
@@ -30,6 +31,9 @@
 
     <!-- Global Floating Toast Notification Container (Zero Alert System) -->
     <GlobalToastContainer />
+
+    <!-- Global Confirmation Modal (Replaces browser confirm) -->
+    <GlobalConfirmModal />
   </div>
 </template>
 
@@ -42,6 +46,7 @@ import BoardView from '@/components/views/BoardView.vue';
 import CalendarView from '@/components/views/CalendarView.vue';
 import GanttView from '@/components/views/GanttView.vue';
 import DashboardView from '@/components/views/DashboardView.vue';
+import SmmSheetView from '@/components/views/SmmSheetView.vue';
 import TaskModal from '@/components/tasks/TaskModal.vue';
 import CreateTaskModal from '@/components/tasks/CreateTaskModal.vue';
 import EmailOutboxModal from '@/components/email/EmailOutboxModal.vue';
@@ -49,6 +54,7 @@ import SettingsModal from '@/components/settings/SettingsModal.vue';
 import AuthModal from '@/components/auth/AuthModal.vue';
 import GlobalLoader from '@/components/common/GlobalLoader.vue';
 import GlobalToastContainer from '@/components/common/GlobalToastContainer.vue';
+import GlobalConfirmModal from '@/components/common/GlobalConfirmModal.vue';
 
 import { useAuthStore } from '@/stores/authStore';
 import { useTaskStore } from '@/stores/taskStore';
