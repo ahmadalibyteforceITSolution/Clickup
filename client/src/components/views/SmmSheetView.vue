@@ -22,7 +22,7 @@
           </div>
         </div>
 
-        <!-- Action Buttons -->
+        <!-- Action Buttons (Accessible to SMM Employees & Super Admin) -->
         <div class="flex flex-wrap items-center gap-2">
           <!-- Download Sample Template -->
           <button
@@ -43,9 +43,9 @@
             <span>Export CSV</span>
           </button>
 
-          <!-- Upload CSV -->
+          <!-- Upload CSV (Available to SMM team & Super Admin) -->
           <button
-            v-if="authStore.isSuperAdmin || authStore.isManager"
+            v-if="authStore.isSmmMember"
             @click="openUploadModal"
             class="px-3.5 py-2 text-xs font-bold text-white bg-slate-800 hover:bg-slate-900 rounded-xl flex items-center space-x-1.5 shadow-xs transition-colors"
           >
@@ -53,9 +53,9 @@
             <span>Upload CSV</span>
           </button>
 
-          <!-- + Add Campaign Link -->
+          <!-- + Add Campaign Link (Available to SMM team & Super Admin) -->
           <button
-            v-if="authStore.isSuperAdmin || authStore.isManager"
+            v-if="authStore.isSmmMember"
             @click="openCreateModal"
             class="px-4 py-2 text-xs font-extrabold text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 rounded-xl flex items-center space-x-1.5 shadow-md shadow-purple-500/20 transition-all active:scale-95"
           >
@@ -145,9 +145,10 @@
               <th class="py-3.5 px-3 text-right">Budget</th>
               <th class="py-3.5 px-3 text-right">Clicks</th>
               <th class="py-3.5 px-3 text-right">Impressions</th>
+              <th class="py-3.5 px-4">Created By / SMM</th>
               <th class="py-3.5 px-4">Target Audience</th>
               <th class="py-3.5 px-4">Notes</th>
-              <th v-if="authStore.isSuperAdmin || authStore.isManager" class="py-3.5 px-4 text-center">Actions</th>
+              <th v-if="authStore.isSmmMember" class="py-3.5 px-4 text-center">Actions</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100 dark:divide-[#2F3136]">
@@ -214,6 +215,19 @@
                 {{ (c.impressions || 0).toLocaleString() }}
               </td>
 
+              <!-- Created By / Marketer -->
+              <td class="py-3 px-4 whitespace-nowrap">
+                <div class="flex items-center space-x-2">
+                  <UserAvatar
+                    :name="c.createdBy?.name || c.assignee?.name || 'SMM'"
+                    size="xs"
+                  />
+                  <span class="text-slate-700 dark:text-slate-300 font-semibold">
+                    {{ c.createdBy?.name || c.assignee?.name || 'SMM Member' }}
+                  </span>
+                </div>
+              </td>
+
               <!-- Target Audience -->
               <td class="py-3 px-4 text-slate-600 dark:text-slate-400 max-w-xs truncate">
                 {{ c.targetAudience || '—' }}
@@ -225,7 +239,7 @@
               </td>
 
               <!-- Actions -->
-              <td v-if="authStore.isSuperAdmin || authStore.isManager" class="py-3 px-4 text-center whitespace-nowrap">
+              <td v-if="authStore.isSmmMember" class="py-3 px-4 text-center whitespace-nowrap">
                 <div class="flex items-center justify-center space-x-1.5">
                   <button
                     @click="openEditModal(c)"
@@ -235,6 +249,7 @@
                     <Edit3 class="w-3.5 h-3.5" />
                   </button>
                   <button
+                    v-if="authStore.isSuperAdmin || authStore.isManager || (c.createdBy?._id === authStore.currentUser?._id)"
                     @click="handleDelete(c)"
                     class="p-1.5 text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors"
                     title="Delete Campaign"
@@ -247,21 +262,21 @@
 
             <!-- Empty State -->
             <tr v-if="smmStore.filteredCampaigns.length === 0">
-              <td colspan="10" class="py-12 text-center text-slate-400">
+              <td colspan="11" class="py-12 text-center text-slate-400">
                 <div class="flex flex-col items-center justify-center space-y-2">
                   <Share2 class="w-8 h-8 text-slate-300 dark:text-slate-600" />
                   <p class="text-xs font-bold text-slate-600 dark:text-slate-300">No campaigns or social links found</p>
-                  <p class="text-[11px] text-slate-400">Upload a CSV file or add campaign links to populate this sheet.</p>
+                  <p class="text-[11px] text-slate-400">Upload a CSV file or add campaign links to populate this sheet for Super Admin.</p>
                   <div class="flex items-center space-x-2 pt-2">
                     <button
-                      v-if="authStore.isSuperAdmin || authStore.isManager"
+                      v-if="authStore.isSmmMember"
                       @click="openUploadModal"
                       class="px-3.5 py-1.5 text-xs font-bold text-white bg-slate-800 rounded-xl"
                     >
                       Upload CSV
                     </button>
                     <button
-                      v-if="authStore.isSuperAdmin || authStore.isManager"
+                      v-if="authStore.isSmmMember"
                       @click="openCreateModal"
                       class="px-3.5 py-1.5 text-xs font-bold text-white bg-purple-600 rounded-xl"
                     >
@@ -499,6 +514,7 @@ import { ref, reactive, onMounted } from 'vue';
 import { 
   Share2, Plus, Download, UploadCloud, FileSpreadsheet, Search, ExternalLink, Edit3, Trash2, X 
 } from 'lucide-vue-next';
+import UserAvatar from '@/components/common/UserAvatar.vue';
 import { useSmmStore } from '@/stores/smmStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useUiStore } from '@/stores/uiStore';
@@ -646,7 +662,7 @@ async function handleImportCsv() {
     await smmStore.importCsvFile(selectedCsvFile.value);
     uploadModalOpen.value = false;
   } catch (err) {
-    // Error is handled in uiStore
+    // Error handled in uiStore
   } finally {
     importing.value = false;
   }
