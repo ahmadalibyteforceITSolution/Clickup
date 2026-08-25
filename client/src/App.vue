@@ -11,14 +11,11 @@
       <!-- Top Navigation Bar -->
       <Navbar />
 
-      <!-- Active View Host -->
+      <!-- Active View Host (Smooth Transition without page reloads) -->
       <main class="flex-1 overflow-hidden relative">
-        <ListView v-if="taskStore.activeView === 'list'" />
-        <BoardView v-else-if="taskStore.activeView === 'board'" />
-        <CalendarView v-else-if="taskStore.activeView === 'calendar'" />
-        <GanttView v-else-if="taskStore.activeView === 'gantt'" />
-        <DashboardView v-else-if="taskStore.activeView === 'dashboard'" />
-        <SmmSheetView v-else-if="taskStore.activeView === 'smm'" />
+        <KeepAlive>
+          <component :is="activeViewComponent" />
+        </KeepAlive>
       </main>
     </div>
 
@@ -38,7 +35,7 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue';
+import { computed, onMounted, onUnmounted, watch } from 'vue';
 import Navbar from '@/components/layout/Navbar.vue';
 import Sidebar from '@/components/layout/Sidebar.vue';
 import ListView from '@/components/views/ListView.vue';
@@ -59,10 +56,58 @@ import GlobalConfirmModal from '@/components/common/GlobalConfirmModal.vue';
 import { useAuthStore } from '@/stores/authStore';
 import { useTaskStore } from '@/stores/taskStore';
 import { useNotificationStore } from '@/stores/notificationStore';
+import { useSmmStore } from '@/stores/smmStore';
 
 const authStore = useAuthStore();
 const taskStore = useTaskStore();
 const notifStore = useNotificationStore();
+const smmStore = useSmmStore();
+
+const activeViewComponent = computed(() => {
+  switch (taskStore.activeView) {
+    case 'list': return ListView;
+    case 'board': return BoardView;
+    case 'calendar': return CalendarView;
+    case 'gantt': return GanttView;
+    case 'dashboard': return DashboardView;
+    case 'smm': return SmmSheetView;
+    default: return ListView;
+  }
+});
+
+let autoSyncTimer = null;
+
+// Background Auto-Sync helper (Triggers all GET APIs without reloading the page)
+async function triggerAutoSync() {
+  if (document.hidden) return; // Save bandwidth when tab is backgrounded
+  try {
+    await taskStore.fetchTasks();
+    await taskStore.fetchSpaces();
+    if (authStore.currentUser) {
+      await notifStore.fetchNotifications(authStore.currentUser._id || authStore.currentUser.id);
+    }
+    if (taskStore.activeView === 'smm' && authStore.isSmmMember) {
+      await smmStore.fetchCampaigns();
+    }
+    if (taskStore.activeView === 'dashboard') {
+      await taskStore.fetchAnalytics();
+    }
+  } catch (e) {
+    // Silent fail in background sync
+  }
+}
+
+// Watch for User Persona / Login Changes and auto-sync immediately
+watch(() => authStore.currentUser, async (user) => {
+  if (user) {
+    await taskStore.fetchSpaces();
+    await taskStore.fetchTasks();
+    await notifStore.fetchNotifications(user._id || user.id);
+    if (authStore.isSmmMember) {
+      await smmStore.fetchCampaigns();
+    }
+  }
+});
 
 onMounted(async () => {
   await authStore.fetchUsers();
@@ -74,6 +119,19 @@ onMounted(async () => {
   } else if (authStore.users.length === 0) {
     authStore.authModalOpen = true;
     authStore.authMode = 'register';
+  }
+
+  // 1. Auto-trigger sync when user switches back to browser tab
+  window.addEventListener('focus', triggerAutoSync);
+
+  // 2. Periodic background auto-sync every 15 seconds (keeps tasks, spaces, and sheets live without page reload)
+  autoSyncTimer = setInterval(triggerAutoSync, 15000);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('focus', triggerAutoSync);
+  if (autoSyncTimer) {
+    clearInterval(autoSyncTimer);
   }
 });
 </script>
