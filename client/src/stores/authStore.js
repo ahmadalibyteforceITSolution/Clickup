@@ -20,6 +20,17 @@ export const useAuthStore = defineStore('auth', {
     isSuperAdmin: (state) => state.currentUser?.role === 'super_admin',
     isManager: (state) => state.currentUser?.role === 'manager' || state.currentUser?.role === 'super_admin',
     isEmployee: (state) => state.currentUser?.role === 'employee',
+    
+    // SMM Access: Super Admin, Manager, or Employees in SMM / Marketing / Social Media
+    isSmmMember: (state) => {
+      if (!state.currentUser) return false;
+      if (state.currentUser.role === 'super_admin' || state.currentUser.role === 'manager') return true;
+      const dept = (state.currentUser.department || '').toLowerCase();
+      const title = (state.currentUser.job_title || '').toLowerCase();
+      return dept.includes('smm') || dept.includes('marketing') || dept.includes('social') ||
+             title.includes('smm') || title.includes('marketing') || title.includes('social');
+    },
+
     roleLabel: (state) => {
       const role = state.currentUser?.role;
       if (role === 'super_admin') return 'Super Admin';

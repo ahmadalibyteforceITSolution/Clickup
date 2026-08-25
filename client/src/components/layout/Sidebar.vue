@@ -391,7 +391,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { 
   Layers, LayoutGrid, List, Kanban, Calendar, GanttChartSquare, BarChart3, Plus, Users, X, ChevronLeft, ChevronRight, Edit3, Share2 
 } from 'lucide-vue-next';
@@ -405,14 +405,22 @@ const authStore = useAuthStore();
 const taskStore = useTaskStore();
 const uiStore = useUiStore();
 
-const viewOptions = [
-  { id: 'list', label: 'List View', icon: List },
-  { id: 'board', label: 'Kanban Board', icon: Kanban },
-  { id: 'calendar', label: 'Calendar Schedule', icon: Calendar },
-  { id: 'gantt', label: 'Gantt Timeline', icon: GanttChartSquare },
-  { id: 'dashboard', label: 'Dashboard & Metrics', icon: BarChart3 },
-  { id: 'smm', label: 'SMM & Campaign Sheets', icon: Share2 }
-];
+const viewOptions = computed(() => {
+  const options = [
+    { id: 'list', label: 'List View', icon: List },
+    { id: 'board', label: 'Kanban Board', icon: Kanban },
+    { id: 'calendar', label: 'Calendar Schedule', icon: Calendar },
+    { id: 'gantt', label: 'Gantt Timeline', icon: GanttChartSquare },
+    { id: 'dashboard', label: 'Dashboard & Metrics', icon: BarChart3 }
+  ];
+
+  // SMM Part only shows for Super Admin, Manager, or SMM/Marketing employee
+  if (authStore.isSmmMember) {
+    options.push({ id: 'smm', label: 'SMM & Campaign Sheets', icon: Share2 });
+  }
+
+  return options;
+});
 
 // Custom Modals State
 const createSpaceModalOpen = ref(false);
