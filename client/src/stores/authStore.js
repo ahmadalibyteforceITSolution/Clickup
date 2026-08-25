@@ -1,23 +1,14 @@
 import { defineStore } from 'pinia';
 import axios from 'axios';
 
-function extractErrorMessage(err) {
-  if (!err) return 'An unexpected error occurred';
-  if (typeof err === 'string') return err;
-  if (err.response?.data) {
-    if (typeof err.response.data === 'string') return err.response.data;
-    if (typeof err.response.data.error === 'string') return err.response.data.error;
-    if (typeof err.response.data.message === 'string') return err.response.data.message;
-  }
-  return err.message || 'An unexpected error occurred';
-}
-
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     currentUser: null,
     users: [],
     loading: false,
     error: null,
+    
+    // Auth Modal State
     authModalOpen: false,
     authMode: 'login', // 'login' | 'register' | 'verify'
     unverifiedEmail: '',
@@ -25,40 +16,32 @@ export const useAuthStore = defineStore('auth', {
   }),
 
   getters: {
+    isAuthenticated: (state) => !!state.currentUser,
     isSuperAdmin: (state) => state.currentUser?.role === 'super_admin',
     isManager: (state) => state.currentUser?.role === 'manager' || state.currentUser?.role === 'super_admin',
     isEmployee: (state) => state.currentUser?.role === 'employee',
     roleLabel: (state) => {
-      if (!state.currentUser) return '';
-      switch (state.currentUser.role) {
-        case 'super_admin': return 'Super Admin';
-        case 'manager': return 'Manager';
-        case 'employee': return 'Employee';
-        default: return state.currentUser.role;
-      }
+      const role = state.currentUser?.role;
+      if (role === 'super_admin') return 'Super Admin';
+      if (role === 'manager') return 'Manager';
+      if (role === 'employee') return 'Employee';
+      return 'Guest';
     }
   },
 
   actions: {
     async fetchUsers() {
-      this.loading = true;
       try {
         const res = await axios.get('/api/users');
         this.users = Array.isArray(res.data) ? res.data : [];
-
         if (!this.currentUser && this.users.length > 0) {
-          this.currentUser = this.users[0];
+          const admin = this.users.find(u => u.role === 'super_admin');
+          this.currentUser = admin || this.users[0];
         }
       } catch (err) {
         this.users = [];
-        this.error = extractErrorMessage(err);
-      } finally {
-        this.loading = false;
+        this.error = typeof err.response?.data?.error === 'string' ? err.response.data.error : err.message;
       }
-    },
-
-    switchUser(user) {
-      this.currentUser = user;
     },
 
     async register(userData) {
@@ -71,7 +54,7 @@ export const useAuthStore = defineStore('auth', {
         this.authMode = 'verify';
         return res.data;
       } catch (err) {
-        const msg = extractErrorMessage(err);
+        const msg = typeof err.response?.data?.error === 'string' ? err.response.data.error : (err.message || 'Registration failed');
         this.error = msg;
         throw new Error(msg);
       } finally {
@@ -86,11 +69,12 @@ export const useAuthStore = defineStore('auth', {
         const res = await axios.post('/api/auth/verify-email', { email, code });
         this.currentUser = res.data.user;
         this.authModalOpen = false;
+        this.unverifiedEmail = '';
         this.previewVerificationCode = '';
         await this.fetchUsers();
         return res.data;
       } catch (err) {
-        const msg = extractErrorMessage(err);
+        const msg = typeof err.response?.data?.error === 'string' ? err.response.data.error : (err.message || 'Verification failed');
         this.error = msg;
         throw new Error(msg);
       } finally {
@@ -99,12 +83,18 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async resendVerificationCode(email) {
+      this.loading = true;
+      this.error = null;
       try {
         const res = await axios.post('/api/auth/resend-code', { email });
         this.previewVerificationCode = res.data.verificationCode || '';
         return res.data;
       } catch (err) {
-        throw new Error(extractErrorMessage(err));
+        const msg = typeof err.response?.data?.error === 'string' ? err.response.data.error : (err.message || 'Failed to resend code');
+        this.error = msg;
+        throw new Error(msg);
+      } finally {
+        this.loading = false;
       }
     },
 
@@ -119,15 +109,44 @@ export const useAuthStore = defineStore('auth', {
         return res.data;
       } catch (err) {
         if (err.response?.data?.requiresVerification) {
-          this.unverifiedEmail = email;
+          this.unverifiedEmail = err.response.data.email || email;
           this.previewVerificationCode = err.response.data.verificationCode || '';
           this.authMode = 'verify';
+          throw new Error('Please verify your email address to proceed.');
         }
-        const msg = extractErrorMessage(err);
+        const msg = typeof err.response?.data?.error === 'string' ? err.response.data.error : (err.message || 'Invalid email or password');
         this.error = msg;
         throw new Error(msg);
       } finally {
         this.loading = false;
+      }
+    },
+
+    async updateProfile(userId, profileData) {
+      try {
+        const res = await axios.put(`/api/users/${userId}`, profileData);
+        if (this.currentUser && (this.currentUser.id === userId || this.currentUser._id === userId)) {
+          this.currentUser = { ...this.currentUser, ...res.data };
+        }
+        await this.fetchUsers();
+        return res.data;
+      } catch (err) {
+        const msg = typeof err.response?.data?.error === 'string' ? err.response.data.error : (err.message || 'Failed to update profile');
+        throw new Error(msg);
+      }
+    },
+
+    async deleteUser(userId) {
+      try {
+        await axios.delete(`/api/users/${userId}`);
+        if (this.currentUser && (this.currentUser.id === userId || this.currentUser._id === userId)) {
+          this.logout();
+        } else {
+          await this.fetchUsers();
+        }
+      } catch (err) {
+        const msg = typeof err.response?.data?.error === 'string' ? err.response.data.error : (err.message || 'Failed to delete user');
+        throw new Error(msg);
       }
     },
 

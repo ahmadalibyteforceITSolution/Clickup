@@ -89,22 +89,47 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Update user profile
+// Update user profile (Allows Super Admin to edit any profile or role)
 router.put('/:id', async (req, res) => {
   try {
-    const { name, department, job_title, avatar } = req.body;
+    const { name, email, role, department, job_title, avatar } = req.body;
+    const updates = {};
+
+    if (name) updates.name = name.trim();
+    if (email) updates.email = email.toLowerCase().trim();
+    if (role) updates.role = role;
+    if (department !== undefined) updates.department = department;
+    if (job_title !== undefined) updates.job_title = job_title;
+    if (avatar !== undefined) updates.avatar = avatar;
+
     const user = await User.findByIdAndUpdate(
       req.params.id,
-      { 
-        ...(name && { name: name.trim() }),
-        ...(department !== undefined && { department }),
-        ...(job_title !== undefined && { job_title }),
-        ...(avatar !== undefined && { avatar })
-      },
+      updates,
       { new: true }
     );
+
     if (!user) return res.status(404).json({ error: 'User not found' });
     res.json(user);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Delete user account (Super Admin only)
+router.delete('/:id', async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    // Remove user from any task assignees
+    await Task.updateMany(
+      { assignees: user._id },
+      { $pull: { assignees: user._id } }
+    );
+
+    await User.findByIdAndDelete(req.params.id);
+
+    res.json({ success: true, message: `User "${user.name}" deleted successfully` });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

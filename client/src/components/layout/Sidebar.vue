@@ -176,7 +176,7 @@
               </div>
             </div>
 
-            <!-- Empty Spaces State (Only Admin can create space) -->
+            <!-- Empty Spaces State -->
             <div v-if="(!taskStore.spaces || taskStore.spaces.length === 0) && (authStore.isSuperAdmin || authStore.isManager)" class="p-1 text-center">
               <button
                 @click="openCreateSpaceModal"
@@ -210,25 +210,44 @@
               <span v-if="!taskStore.sidebarCollapsed">All Members</span>
             </button>
 
-            <button
+            <div
               v-for="u in authStore.users"
               :key="u._id || u.id"
-              @click="filterByAssignee(u._id || u.id)"
-              :title="u.name"
+              class="flex items-center justify-between group rounded-xl hover:bg-slate-800/40 transition-colors"
               :class="[
-                'w-full flex items-center rounded-xl text-xs transition-colors',
-                taskStore.sidebarCollapsed ? 'justify-center p-2' : 'justify-between px-3 py-1.5',
-                taskStore.assigneeFilter === (u._id || u.id)
-                  ? 'bg-purple-900/50 text-purple-300 font-bold border-l-2 border-purple-400 pl-2'
-                  : 'text-slate-400 hover:bg-slate-800/40 hover:text-slate-200'
+                taskStore.assigneeFilter === (u._id || u.id) ? 'bg-purple-900/50 text-purple-300 font-bold border-l-2 border-purple-400' : ''
               ]"
             >
-              <div class="flex items-center space-x-2 truncate">
-                <UserAvatar :name="u.name" :avatar="u.avatar" size="xs" />
-                <span v-if="!taskStore.sidebarCollapsed" class="truncate">{{ u.name }}</span>
-              </div>
-              <span v-if="!taskStore.sidebarCollapsed" class="text-[9px] text-slate-500 uppercase font-bold">{{ u.role === 'super_admin' ? 'Admin' : u.role }}</span>
-            </button>
+              <button
+                @click="filterByAssignee(u._id || u.id)"
+                :title="u.name"
+                :class="[
+                  'flex items-center flex-1 min-w-0 text-xs transition-colors',
+                  taskStore.sidebarCollapsed ? 'justify-center p-2' : 'justify-between px-3 py-1.5',
+                  taskStore.assigneeFilter === (u._id || u.id)
+                    ? 'text-purple-300 font-bold pl-2'
+                    : 'text-slate-400 hover:text-slate-200'
+                ]"
+              >
+                <div class="flex items-center space-x-2 truncate">
+                  <UserAvatar :name="u.name" :avatar="u.avatar" size="xs" />
+                  <span v-if="!taskStore.sidebarCollapsed" class="truncate">{{ u.name }}</span>
+                </div>
+                <span v-if="!taskStore.sidebarCollapsed" class="text-[9px] text-slate-500 uppercase font-bold pr-1">
+                  {{ u.role === 'super_admin' ? 'Admin' : u.role }}
+                </span>
+              </button>
+
+              <!-- Super Admin Edit / Manage Button on Each Profile -->
+              <button
+                v-if="!taskStore.sidebarCollapsed && authStore.isSuperAdmin"
+                @click.stop="openEditMemberModal(u)"
+                class="opacity-0 group-hover:opacity-100 p-1.5 mr-1 text-slate-400 hover:text-purple-400 hover:bg-slate-700/50 rounded-lg transition-opacity"
+                title="Edit / Delete Employee Profile"
+              >
+                <Edit3 class="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -361,15 +380,23 @@
         </div>
       </div>
     </aside>
+
+    <!-- Super Admin Member Profile Edit Modal -->
+    <EditProfileModal
+      :isOpen="editMemberModalOpen"
+      :targetUser="selectedMemberToEdit"
+      @close="editMemberModalOpen = false"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref } from 'vue';
 import { 
-  Layers, LayoutGrid, List, Kanban, Calendar, GanttChartSquare, BarChart3, Plus, Users, X, ChevronLeft, ChevronRight 
+  Layers, LayoutGrid, List, Kanban, Calendar, GanttChartSquare, BarChart3, Plus, Users, X, ChevronLeft, ChevronRight, Edit3 
 } from 'lucide-vue-next';
 import UserAvatar from '@/components/common/UserAvatar.vue';
+import EditProfileModal from '@/components/settings/EditProfileModal.vue';
 import { useAuthStore } from '@/stores/authStore';
 import { useTaskStore } from '@/stores/taskStore';
 
@@ -393,6 +420,9 @@ const createListModalOpen = ref(false);
 const targetSpaceId = ref(null);
 const targetSpaceName = ref('');
 const newListName = ref('');
+
+const editMemberModalOpen = ref(false);
+const selectedMemberToEdit = ref(null);
 
 function switchView(viewId) {
   taskStore.activeView = viewId;
@@ -459,5 +489,10 @@ async function handleCreateList() {
   } catch (err) {
     alert('Error creating list: ' + err.message);
   }
+}
+
+function openEditMemberModal(user) {
+  selectedMemberToEdit.value = user;
+  editMemberModalOpen.value = true;
 }
 </script>

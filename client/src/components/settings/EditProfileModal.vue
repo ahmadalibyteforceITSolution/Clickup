@@ -9,7 +9,7 @@
       <div class="px-6 py-4 border-b border-slate-100 dark:border-[#2F3136] flex items-center justify-between bg-slate-50/50 dark:bg-[#18191B]/50">
         <h3 class="text-sm font-extrabold text-slate-900 dark:text-white flex items-center space-x-2">
           <UserIcon class="w-4 h-4 text-purple-600 dark:text-purple-400" />
-          <span>Edit User Profile & Picture</span>
+          <span>{{ isEditingOther ? `Edit Profile: ${profileForm.name}` : 'Edit My Profile & Picture' }}</span>
         </h3>
         <button @click="close" class="text-slate-400 hover:text-slate-600">
           <X class="w-4 h-4" />
@@ -17,7 +17,7 @@
       </div>
 
       <!-- Body -->
-      <form @submit.prevent="handleSaveProfile" class="p-6 space-y-5">
+      <form @submit.prevent="handleSaveProfile" class="p-6 space-y-4">
         <!-- Avatar Upload / Photo Section -->
         <div class="flex flex-col items-center text-center space-y-3">
           <div class="relative group">
@@ -64,48 +64,88 @@
             v-model="profileForm.name"
             type="text"
             required
-            placeholder="Your Name"
+            placeholder="Name"
             class="w-full px-3.5 py-2 text-xs bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] focus:border-purple-500 rounded-xl text-slate-900 dark:text-white focus:outline-none"
           />
         </div>
 
-        <!-- Job Title -->
+        <!-- Email (Editable by Super Admin) -->
         <div>
-          <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Job Title</label>
+          <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Email Address</label>
           <input
-            v-model="profileForm.job_title"
-            type="text"
-            placeholder="e.g. Lead Designer, Software Engineer..."
-            class="w-full px-3.5 py-2 text-xs bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] focus:border-purple-500 rounded-xl text-slate-900 dark:text-white focus:outline-none"
+            v-model="profileForm.email"
+            type="email"
+            :disabled="!authStore.isSuperAdmin"
+            placeholder="email@company.com"
+            class="w-full px-3.5 py-2 text-xs bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] focus:border-purple-500 rounded-xl text-slate-900 dark:text-white focus:outline-none disabled:opacity-60"
           />
         </div>
 
-        <!-- Department -->
-        <div>
-          <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Department</label>
-          <input
-            v-model="profileForm.department"
-            type="text"
-            placeholder="Engineering, Marketing, Operations..."
-            class="w-full px-3.5 py-2 text-xs bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] focus:border-purple-500 rounded-xl text-slate-900 dark:text-white focus:outline-none"
-          />
+        <!-- Role Selector (Super Admin Only) -->
+        <div v-if="authStore.isSuperAdmin">
+          <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Role / Permissions</label>
+          <select
+            v-model="profileForm.role"
+            class="w-full px-3.5 py-2 text-xs bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] focus:border-purple-500 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none font-semibold"
+          >
+            <option value="super_admin">Super Admin / Owner</option>
+            <option value="manager">Manager</option>
+            <option value="employee">Employee</option>
+          </select>
         </div>
 
-        <div class="flex items-center justify-end space-x-2 pt-2 border-t border-slate-100 dark:border-[#2F3136]">
+        <!-- Job Title & Department -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Job Title</label>
+            <input
+              v-model="profileForm.job_title"
+              type="text"
+              placeholder="e.g. Lead Designer"
+              class="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] focus:border-purple-500 rounded-xl text-slate-900 dark:text-white focus:outline-none"
+            />
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Department</label>
+            <input
+              v-model="profileForm.department"
+              type="text"
+              placeholder="Engineering"
+              class="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] focus:border-purple-500 rounded-xl text-slate-900 dark:text-white focus:outline-none"
+            />
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-[#2F3136]">
+          <!-- Delete User Button (Super Admin only, cannot delete self if only 1 admin) -->
           <button
+            v-if="authStore.isSuperAdmin && targetUser && (targetUser._id !== authStore.currentUser?._id && targetUser.id !== authStore.currentUser?.id)"
             type="button"
-            @click="close"
-            class="px-4 py-2 text-xs font-semibold text-slate-500 hover:text-slate-700"
+            @click="handleDeleteUser"
+            class="px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl flex items-center space-x-1 transition-colors"
           >
-            Cancel
+            <Trash2 class="w-3.5 h-3.5" />
+            <span>Delete User</span>
           </button>
-          <button
-            type="submit"
-            :disabled="saving"
-            class="px-5 py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-md shadow-purple-500/20 transition-all active:scale-95"
-          >
-            {{ saving ? 'Saving Changes...' : 'Save Profile' }}
-          </button>
+          <div v-else></div>
+
+          <div class="flex items-center space-x-2">
+            <button
+              type="button"
+              @click="close"
+              class="px-4 py-2 text-xs font-semibold text-slate-500 hover:text-slate-700"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              :disabled="saving"
+              class="px-5 py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-md shadow-purple-500/20 transition-all active:scale-95"
+            >
+              {{ saving ? 'Saving...' : 'Save Profile' }}
+            </button>
+          </div>
         </div>
       </form>
     </div>
@@ -113,37 +153,53 @@
 </template>
 
 <script setup>
-import { ref, reactive, watch } from 'vue';
-import { X, User as UserIcon, Camera, Upload } from 'lucide-vue-next';
+import { ref, reactive, computed, watch } from 'vue';
+import { X, User as UserIcon, Camera, Upload, Trash2 } from 'lucide-vue-next';
 import UserAvatar from '@/components/common/UserAvatar.vue';
 import { useAuthStore } from '@/stores/authStore';
+import { useTaskStore } from '@/stores/taskStore';
 import axios from 'axios';
 
 const props = defineProps({
-  isOpen: { type: Boolean, default: false }
+  isOpen: { type: Boolean, default: false },
+  targetUser: { type: Object, default: null }
 });
 
 const emit = defineEmits(['close']);
 
 const authStore = useAuthStore();
+const taskStore = useTaskStore();
+
 const fileInputRef = ref(null);
 const previewAvatar = ref(null);
 const avatarFile = ref(null);
 const saving = ref(false);
 
+const activeTarget = computed(() => props.targetUser || authStore.currentUser);
+const isEditingOther = computed(() => {
+  if (!props.targetUser || !authStore.currentUser) return false;
+  const targetId = props.targetUser._id || props.targetUser.id;
+  const currentId = authStore.currentUser._id || authStore.currentUser.id;
+  return targetId !== currentId;
+});
+
 const profileForm = reactive({
   name: '',
+  email: '',
+  role: 'employee',
   job_title: '',
   department: '',
   avatar: ''
 });
 
 watch(() => props.isOpen, (open) => {
-  if (open && authStore.currentUser) {
-    profileForm.name = authStore.currentUser.name || '';
-    profileForm.job_title = authStore.currentUser.job_title || '';
-    profileForm.department = authStore.currentUser.department || 'General';
-    profileForm.avatar = authStore.currentUser.avatar || '';
+  if (open && activeTarget.value) {
+    profileForm.name = activeTarget.value.name || '';
+    profileForm.email = activeTarget.value.email || '';
+    profileForm.role = activeTarget.value.role || 'employee';
+    profileForm.job_title = activeTarget.value.job_title || '';
+    profileForm.department = activeTarget.value.department || 'Engineering';
+    profileForm.avatar = activeTarget.value.avatar || '';
     previewAvatar.value = null;
     avatarFile.value = null;
   }
@@ -171,11 +227,11 @@ function removeAvatar() {
 }
 
 async function handleSaveProfile() {
-  if (!authStore.currentUser) return;
+  if (!activeTarget.value) return;
   saving.value = true;
 
   try {
-    const userId = authStore.currentUser._id || authStore.currentUser.id;
+    const userId = activeTarget.value._id || activeTarget.value.id;
     let finalAvatar = profileForm.avatar;
 
     // If a new avatar file was selected, upload it
@@ -186,20 +242,40 @@ async function handleSaveProfile() {
       finalAvatar = uploadRes.data.avatar;
     }
 
-    const res = await axios.put(`/api/users/${userId}`, {
+    const payload = {
       name: profileForm.name,
-      job_title: profileForm.job_title,
+      email: profileForm.email,
       department: profileForm.department,
+      job_title: profileForm.job_title,
       avatar: finalAvatar
-    });
+    };
 
-    authStore.currentUser = res.data;
-    await authStore.fetchUsers();
+    if (authStore.isSuperAdmin) {
+      payload.role = profileForm.role;
+    }
+
+    await authStore.updateProfile(userId, payload);
+    await taskStore.fetchTasks();
     close();
   } catch (err) {
     alert('Failed to update profile: ' + (err.response?.data?.error || err.message));
   } finally {
     saving.value = false;
+  }
+}
+
+async function handleDeleteUser() {
+  if (!props.targetUser) return;
+  const userName = props.targetUser.name;
+  if (confirm(`Are you sure you want to permanently delete user "${userName}"?`)) {
+    try {
+      const userId = props.targetUser._id || props.targetUser.id;
+      await authStore.deleteUser(userId);
+      await taskStore.fetchTasks();
+      close();
+    } catch (err) {
+      alert('Failed to delete user: ' + err.message);
+    }
   }
 }
 
