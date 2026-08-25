@@ -7,103 +7,107 @@ export const useTaskStore = defineStore('tasks', {
     tasks: [],
     selectedSpaceId: null,
     selectedListId: null,
+    selectedTask: null,
     activeView: 'list', // 'list' | 'board' | 'calendar' | 'gantt' | 'dashboard'
+    
+    // Filters & Search
     searchQuery: '',
     statusFilter: null,
     priorityFilter: null,
     assigneeFilter: null,
     showOverdueOnly: false,
-    selectedTaskId: null,
-    activeTask: null,
-    loading: false,
+
+    // UI state
     taskModalOpen: false,
     createTaskModalOpen: false,
     emailOutboxModalOpen: false,
     settingsModalOpen: false,
-    analyticsData: null
+    sidebarMobileOpen: false,
+
+    // Analytics
+    analytics: null,
+    loading: false,
+    error: null
   }),
 
   getters: {
-    selectedSpace: (state) => {
-      if (!state.selectedSpaceId) return null;
-      return state.spaces.find(s => (s._id || s.id) === state.selectedSpaceId) || null;
-    },
-
-    allLists: (state) => {
-      const lists = [];
-      state.spaces.forEach(s => {
-        if (s.lists) lists.push(...s.lists);
-        if (s.folders) {
-          s.folders.forEach(f => {
-            if (f.lists) lists.push(...f.lists);
-          });
-        }
-      });
-      return lists;
-    },
-
     filteredTasks: (state) => {
-      return state.tasks.filter(t => {
-        // Space filter
-        if (state.selectedSpaceId) {
-          const taskSpaceId = t.spaceId?._id || t.spaceId || t.list?.spaceId?._id || t.list?.spaceId;
-          if (taskSpaceId && String(taskSpaceId) !== String(state.selectedSpaceId)) {
-            return false;
-          }
-        }
-
-        // List filter
-        if (state.selectedListId) {
-          const taskListId = t.listId?._id || t.listId || t.list?._id || t.list?.id;
-          if (taskListId && String(taskListId) !== String(state.selectedListId)) {
-            return false;
-          }
-        }
-
-        // Status filter
-        if (state.statusFilter && t.status !== state.statusFilter) {
+      return state.tasks.filter(task => {
+        if (state.selectedSpaceId && task.space_id?._id !== state.selectedSpaceId && task.space_id !== state.selectedSpaceId) {
           return false;
         }
-
-        // Priority filter
-        if (state.priorityFilter && t.priority !== state.priorityFilter) {
+        if (state.selectedListId && task.list_id?._id !== state.selectedListId && task.list_id !== state.selectedListId) {
           return false;
         }
-
-        // Assignee filter
+        if (state.statusFilter && task.status !== state.statusFilter) {
+          return false;
+        }
+        if (state.priorityFilter && task.priority !== state.priorityFilter) {
+          return false;
+        }
         if (state.assigneeFilter) {
-          const hasAssignee = (t.assignees || []).some(a => String(a._id || a.id) === String(state.assigneeFilter));
+          const hasAssignee = task.assignees?.some(a => (a._id || a.id || a) === state.assigneeFilter);
           if (!hasAssignee) return false;
         }
-
-        // Overdue filter
         if (state.showOverdueOnly) {
+          if (!task.dueDate || task.status === 'completed') return false;
           const today = new Date().toISOString().split('T')[0];
-          if (t.status === 'completed' || !t.dueDate || t.dueDate >= today) {
-            return false;
-          }
+          if (task.dueDate >= today) return false;
         }
-
-        // Search query
-        if (state.searchQuery) {
-          const q = state.searchQuery.toLowerCase();
-          const matchTitle = t.title.toLowerCase().includes(q);
-          const matchDesc = (t.description || '').toLowerCase().includes(q);
-          if (!matchTitle && !matchDesc) return false;
+        if (state.searchQuery.trim()) {
+          const query = state.searchQuery.toLowerCase();
+          const titleMatch = task.title.toLowerCase().includes(query);
+          const descMatch = (task.description || '').toLowerCase().includes(query);
+          if (!titleMatch && !descMatch) return false;
         }
-
         return true;
       });
     },
 
     tasksByStatus: (state) => {
-      const filtered = state.tasks;
-      return {
-        pending: filtered.filter(t => t.status === 'pending'),
-        in_progress: filtered.filter(t => t.status === 'in_progress'),
-        review: filtered.filter(t => t.status === 'review'),
-        completed: filtered.filter(t => t.status === 'completed')
+      const groups = {
+        pending: [],
+        in_progress: [],
+        review: [],
+        completed: []
       };
+      state.filteredTasks.forEach(task => {
+        const s = task.status || 'pending';
+        if (groups[s]) {
+          groups[s].push(task);
+        } else {
+          groups.pending.push(task);
+        }
+      });
+      return groups;
+    },
+
+    tasksByPriority: (state) => {
+      const groups = {
+        urgent: [],
+        high: [],
+        normal: [],
+        low: []
+      };
+      state.filteredTasks.forEach(task => {
+        const p = task.priority || 'normal';
+        if (groups[p]) {
+          groups[p].push(task);
+        } else {
+          groups.normal.push(task);
+        }
+      });
+      return groups;
+    },
+
+    activeSpace: (state) => {
+      if (!state.selectedSpaceId) return null;
+      return state.spaces.find(s => (s._id || s.id) === state.selectedSpaceId);
+    },
+
+    activeList: (state) => {
+      if (!state.selectedListId || !state.activeSpace) return null;
+      return state.activeSpace.lists?.find(l => (l._id || l.id) === state.selectedListId);
     }
   },
 
@@ -113,7 +117,7 @@ export const useTaskStore = defineStore('tasks', {
         const res = await axios.get('/api/spaces');
         this.spaces = res.data;
       } catch (err) {
-        console.error('Failed to fetch spaces:', err);
+        this.error = err.message;
       }
     },
 
@@ -125,95 +129,96 @@ export const useTaskStore = defineStore('tasks', {
         if (this.selectedListId) params.list_id = this.selectedListId;
         if (this.statusFilter) params.status = this.statusFilter;
         if (this.priorityFilter) params.priority = this.priorityFilter;
-        if (this.assigneeFilter) params.assignee_id = this.assigneeFilter;
+        if (this.assigneeFilter) params.assignee = this.assigneeFilter;
         if (this.searchQuery) params.search = this.searchQuery;
         if (this.showOverdueOnly) params.overdue = 'true';
 
         const res = await axios.get('/api/tasks', { params });
         this.tasks = res.data;
       } catch (err) {
-        console.error('Failed to fetch tasks:', err);
+        this.error = err.message;
       } finally {
         this.loading = false;
       }
     },
 
-    async fetchTaskDetails(id) {
+    async openTaskModal(taskId) {
       try {
-        const res = await axios.get(`/api/tasks/${id}`);
-        this.activeTask = res.data;
-        this.selectedTaskId = id;
+        const res = await axios.get(`/api/tasks/${taskId}`);
+        this.selectedTask = res.data;
+        this.taskModalOpen = true;
       } catch (err) {
-        console.error('Failed to fetch task details:', err);
+        this.error = err.message;
       }
     },
 
-    openTaskModal(taskOrId) {
-      const id = typeof taskOrId === 'object' ? (taskOrId._id || taskOrId.id) : taskOrId;
-      this.fetchTaskDetails(id);
-      this.taskModalOpen = true;
-    },
-
-    closeTaskModal() {
-      this.taskModalOpen = false;
-      this.activeTask = null;
-      this.selectedTaskId = null;
-    },
-
-    async createTask(payload) {
+    async createTask(taskData) {
       try {
-        const res = await axios.post('/api/tasks', payload);
-        this.tasks.unshift(res.data);
-        await this.fetchSpaces(); // update count
+        const res = await axios.post('/api/tasks', taskData);
+        await this.fetchTasks();
+        await this.fetchSpaces();
         return res.data;
       } catch (err) {
         throw new Error(err.response?.data?.error || err.message);
       }
     },
 
-    async updateTask(id, updates) {
+    async updateTask(taskId, updates) {
       try {
-        const res = await axios.put(`/api/tasks/${id}`, updates);
-        const idx = this.tasks.findIndex(t => (t._id || t.id) === id);
-        if (idx !== -1) {
-          this.tasks[idx] = res.data;
+        const res = await axios.put(`/api/tasks/${taskId}`, updates);
+        if (this.selectedTask && (this.selectedTask._id === taskId || this.selectedTask.id === taskId)) {
+          this.selectedTask = res.data;
         }
-        if (this.activeTask && (this.activeTask._id || this.activeTask.id) === id) {
-          this.activeTask = res.data;
-        }
+        await this.fetchTasks();
         return res.data;
       } catch (err) {
         throw new Error(err.response?.data?.error || err.message);
       }
     },
 
-    async deleteTask(id) {
+    async deleteTask(taskId) {
       try {
-        await axios.delete(`/api/tasks/${id}`);
-        this.tasks = this.tasks.filter(t => (t._id || t.id) !== id);
-        if (this.selectedTaskId === id) {
-          this.closeTaskModal();
-        }
+        await axios.delete(`/api/tasks/${taskId}`);
+        this.taskModalOpen = false;
+        this.selectedTask = null;
+        await this.fetchTasks();
         await this.fetchSpaces();
       } catch (err) {
         throw new Error(err.response?.data?.error || err.message);
       }
     },
 
-    async createSpace(payload) {
+    async createSpace(spaceData) {
       try {
-        const res = await axios.post('/api/spaces', payload);
-        this.spaces.push(res.data);
+        const res = await axios.post('/api/spaces', spaceData);
+        await this.fetchSpaces();
+        this.selectedSpaceId = res.data._id || res.data.id;
+        await this.fetchTasks();
         return res.data;
       } catch (err) {
         throw new Error(err.response?.data?.error || err.message);
       }
     },
 
-    async createList(spaceId, payload) {
+    async createList(spaceId, listData) {
       try {
-        const res = await axios.post(`/api/spaces/${spaceId}/lists`, payload);
+        const res = await axios.post(`/api/spaces/${spaceId}/lists`, listData);
         await this.fetchSpaces();
+        this.selectedListId = res.data._id || res.data.id;
+        await this.fetchTasks();
+        return res.data;
+      } catch (err) {
+        throw new Error(err.response?.data?.error || err.message);
+      }
+    },
+
+    async addComment(taskId, commentData) {
+      try {
+        const res = await axios.post(`/api/comments/tasks/${taskId}`, commentData);
+        if (this.selectedTask && (this.selectedTask._id === taskId || this.selectedTask.id === taskId)) {
+          if (!this.selectedTask.comments) this.selectedTask.comments = [];
+          this.selectedTask.comments.push(res.data);
+        }
         return res.data;
       } catch (err) {
         throw new Error(err.response?.data?.error || err.message);
@@ -222,10 +227,10 @@ export const useTaskStore = defineStore('tasks', {
 
     async fetchAnalytics() {
       try {
-        const res = await axios.get('/api/analytics/dashboard');
-        this.analyticsData = res.data;
+        const res = await axios.get('/api/analytics');
+        this.analytics = res.data;
       } catch (err) {
-        console.error('Failed to fetch analytics:', err);
+        this.error = err.message;
       }
     }
   }

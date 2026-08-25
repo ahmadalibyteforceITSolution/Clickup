@@ -1,6 +1,16 @@
 import { defineStore } from 'pinia';
 import axios from 'axios';
 
+function extractErrorMessage(err) {
+  if (typeof err === 'string') return err;
+  if (err.response?.data) {
+    if (typeof err.response.data === 'string') return err.response.data;
+    if (err.response.data.error) return err.response.data.error;
+    if (err.response.data.message) return err.response.data.message;
+  }
+  return err.message || 'An unexpected error occurred';
+}
+
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     currentUser: null,
@@ -39,7 +49,7 @@ export const useAuthStore = defineStore('auth', {
           this.currentUser = this.users[0];
         }
       } catch (err) {
-        this.error = err.message;
+        this.error = extractErrorMessage(err);
       } finally {
         this.loading = false;
       }
@@ -59,7 +69,7 @@ export const useAuthStore = defineStore('auth', {
         this.authMode = 'verify';
         return res.data;
       } catch (err) {
-        this.error = err.response?.data?.error || err.message;
+        this.error = extractErrorMessage(err);
         throw new Error(this.error);
       } finally {
         this.loading = false;
@@ -77,7 +87,7 @@ export const useAuthStore = defineStore('auth', {
         await this.fetchUsers();
         return res.data;
       } catch (err) {
-        this.error = err.response?.data?.error || err.message;
+        this.error = extractErrorMessage(err);
         throw new Error(this.error);
       } finally {
         this.loading = false;
@@ -90,7 +100,7 @@ export const useAuthStore = defineStore('auth', {
         this.previewVerificationCode = res.data.verificationCode || '';
         return res.data;
       } catch (err) {
-        throw new Error(err.response?.data?.error || err.message);
+        throw new Error(extractErrorMessage(err));
       }
     },
 
@@ -109,7 +119,7 @@ export const useAuthStore = defineStore('auth', {
           this.previewVerificationCode = err.response.data.verificationCode || '';
           this.authMode = 'verify';
         }
-        this.error = err.response?.data?.error || err.message;
+        this.error = extractErrorMessage(err);
         throw new Error(this.error);
       } finally {
         this.loading = false;

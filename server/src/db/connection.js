@@ -4,43 +4,48 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Ensure SRV DNS records resolve reliably on Windows
-try {
-  dns.setServers(['8.8.8.8', '8.8.4.4', '1.1.1.1']);
-} catch (e) {
-  // Ignore if custom DNS cannot be set
+// Only apply custom DNS servers on local Windows machines, not on Vercel Linux
+if (process.platform === 'win32' && !process.env.VERCEL) {
+  try {
+    dns.setServers(['8.8.8.8', '8.8.4.4', '1.1.1.1']);
+  } catch (e) {
+    // Ignore
+  }
 }
 
-let isConnected = false;
+const DEFAULT_URI = 'mongodb+srv://ahmedalihafeez25_db_user:%40Sublime12345@cluster0.oe0inne.mongodb.net/ClickUp?retryWrites=true&w=majority';
+
+let cachedConn = null;
+let cachedPromise = null;
 
 export async function connectDB() {
-  if (isConnected) return mongoose.connection;
+  if (cachedConn && mongoose.connection.readyState === 1) {
+    return cachedConn;
+  }
 
-  const mongoUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/ClickUp';
+  if (!cachedPromise) {
+    const mongoUri = process.env.MONGODB_URI || DEFAULT_URI;
+
+    cachedPromise = mongoose.connect(mongoUri, {
+      bufferCommands: false,
+      serverSelectionTimeoutMS: 8000,
+      connectTimeoutMS: 8000
+    }).then((m) => {
+      console.log(`🍃 Connected directly to MongoDB Atlas: ${m.connection.host}/${m.connection.name}`);
+      return m.connection;
+    }).catch((err) => {
+      cachedPromise = null;
+      console.error(`⚠️ MongoDB Atlas connection failed: ${err.message}`);
+      throw err;
+    });
+  }
 
   try {
-    const conn = await mongoose.connect(mongoUri, {
-      serverSelectionTimeoutMS: 6000
-    });
-    isConnected = true;
-    console.log(`🍃 Connected directly to MongoDB Atlas: ${conn.connection.host}/${conn.connection.name}`);
-    return conn.connection;
-  } catch (error) {
-    console.warn(`⚠️ Could not connect to primary MongoDB at ${mongoUri}: ${error.message}`);
-    console.log('🔄 Attempting fallback: connecting to Mongo Memory Server or local instance...');
-
-    try {
-      const { MongoMemoryServer } = await import('mongodb-memory-server');
-      const mongod = await MongoMemoryServer.create();
-      const uri = mongod.getUri();
-      const conn = await mongoose.connect(uri);
-      isConnected = true;
-      console.log(`🍃 Connected to In-Memory MongoDB instance at: ${uri}`);
-      return conn.connection;
-    } catch (memError) {
-      console.error('Failed to initialize in-memory MongoDB fallback:', memError.message);
-      throw error;
-    }
+    cachedConn = await cachedPromise;
+    return cachedConn;
+  } catch (e) {
+    cachedPromise = null;
+    throw e;
   }
 }
 

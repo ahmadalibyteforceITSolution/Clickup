@@ -1,8 +1,17 @@
 <template>
-  <header class="h-14 bg-white dark:bg-[#202225] border-b border-slate-200 dark:border-[#2F3136] px-4 flex items-center justify-between shrink-0 select-none z-20">
-    <!-- Left Section: Search & Overdue Filter -->
-    <div class="flex items-center space-x-3">
-      <div class="relative w-64 md:w-80">
+  <header class="h-14 bg-white dark:bg-[#202225] border-b border-slate-200 dark:border-[#2F3136] px-3 md:px-4 flex items-center justify-between shrink-0 select-none z-20">
+    <!-- Left Section: Mobile Menu Toggle, Search & Overdue Filter -->
+    <div class="flex items-center space-x-2 md:space-x-3">
+      <!-- Mobile Hamburger Toggle -->
+      <button
+        @click="taskStore.sidebarMobileOpen = !taskStore.sidebarMobileOpen"
+        class="md:hidden p-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#292B2F] transition-colors"
+        title="Toggle Navigation Menu"
+      >
+        <Menu class="w-5 h-5" />
+      </button>
+
+      <div class="relative w-40 sm:w-60 md:w-80">
         <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
           <Search class="w-4 h-4" />
         </span>
@@ -10,8 +19,8 @@
           v-model="taskStore.searchQuery"
           @input="taskStore.fetchTasks()"
           type="text"
-          placeholder="Search tasks, descriptions..."
-          class="w-full pl-9 pr-8 py-1.5 bg-slate-100 dark:bg-[#18191B] border border-transparent focus:border-purple-500 rounded-lg text-xs md:text-sm text-slate-800 dark:text-slate-200 focus:outline-none transition-all placeholder:text-slate-400"
+          placeholder="Search tasks..."
+          class="w-full pl-9 pr-7 py-1.5 bg-slate-100 dark:bg-[#18191B] border border-transparent focus:border-purple-500 rounded-lg text-xs md:text-sm text-slate-800 dark:text-slate-200 focus:outline-none transition-all placeholder:text-slate-400"
         />
         <button
           v-if="taskStore.searchQuery"
@@ -26,7 +35,7 @@
       <button
         @click="toggleOverdueFilter"
         :class="[
-          'px-2.5 py-1 rounded-md text-xs font-semibold flex items-center space-x-1.5 transition-colors border',
+          'px-2 py-1 rounded-md text-xs font-semibold hidden sm:flex items-center space-x-1.5 transition-colors border',
           taskStore.showOverdueOnly
             ? 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800'
             : 'text-slate-600 dark:text-slate-400 border-transparent hover:bg-slate-100 dark:hover:bg-[#292B2F]'
@@ -38,11 +47,11 @@
     </div>
 
     <!-- Right Section: Actions & User Persona Switcher -->
-    <div class="flex items-center space-x-2.5">
+    <div class="flex items-center space-x-1.5 sm:space-x-2.5">
       <!-- Create Task Button (Super Admin / Manager / Team) -->
       <button
         @click="taskStore.createTaskModalOpen = true"
-        class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-medium text-xs md:text-sm px-3.5 py-1.5 rounded-lg flex items-center space-x-1.5 shadow-sm shadow-purple-500/20 transition-all active:scale-95"
+        class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-medium text-xs md:text-sm px-2.5 sm:px-3.5 py-1.5 rounded-lg flex items-center space-x-1 shadow-sm shadow-purple-500/20 transition-all active:scale-95"
       >
         <Plus class="w-4 h-4" />
         <span class="hidden sm:inline font-semibold">New Task</span>
@@ -52,7 +61,7 @@
       <button
         @click="openEmailOutbox"
         title="View ClickUp Email Outbox & Dispatch History"
-        class="relative p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#292B2F] border border-slate-200 dark:border-[#2F3136] transition-colors flex items-center space-x-1"
+        class="relative p-1.5 sm:p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#292B2F] border border-slate-200 dark:border-[#2F3136] transition-colors flex items-center space-x-1"
       >
         <Mail class="w-4 h-4 text-purple-600 dark:text-purple-400" />
         <span class="text-xs font-semibold hidden md:inline">Emails</span>
@@ -63,12 +72,12 @@
       <div class="relative">
         <button
           @click="notificationsOpen = !notificationsOpen"
-          class="relative p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#292B2F] transition-colors"
+          class="relative p-1.5 sm:p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#292B2F] transition-colors"
         >
           <Bell class="w-4 h-4" />
           <span
             v-if="notifStore.unreadCount > 0"
-            class="absolute top-1 right-1 bg-red-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center border-2 border-white dark:border-[#202225]"
+            class="absolute top-0.5 right-0.5 bg-red-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center border-2 border-white dark:border-[#202225]"
           >
             {{ notifStore.unreadCount }}
           </span>
@@ -77,7 +86,7 @@
         <!-- Notifications Dropdown Drawer -->
         <div
           v-if="notificationsOpen"
-          class="absolute right-0 mt-2 w-80 sm:w-96 bg-white dark:bg-[#202225] rounded-xl shadow-2xl border border-slate-200 dark:border-[#2F3136] py-2 z-50 animate-fade-in"
+          class="absolute right-0 mt-2 w-72 sm:w-96 bg-white dark:bg-[#202225] rounded-xl shadow-2xl border border-slate-200 dark:border-[#2F3136] py-2 z-50 animate-fade-in"
         >
           <div class="px-4 py-2 border-b border-slate-100 dark:border-[#2F3136] flex items-center justify-between">
             <h4 class="font-bold text-sm text-slate-800 dark:text-white flex items-center space-x-2">
@@ -119,7 +128,7 @@
       <!-- Dark / Light Theme Toggle -->
       <button
         @click="toggleTheme"
-        class="p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#292B2F] transition-colors"
+        class="p-1.5 sm:p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#292B2F] transition-colors"
         title="Toggle Light/Dark Theme"
       >
         <Sun v-if="isDark" class="w-4 h-4 text-amber-400" />
@@ -127,10 +136,10 @@
       </button>
 
       <!-- Live User Persona Menu & Edit Profile Trigger -->
-      <div class="relative ml-2">
+      <div class="relative ml-1">
         <button
           @click="userMenuOpen = !userMenuOpen"
-          class="flex items-center space-x-2 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-[#292B2F] border border-slate-200 dark:border-[#2F3136] transition-colors"
+          class="flex items-center space-x-1.5 sm:space-x-2 p-1 sm:p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-[#292B2F] border border-slate-200 dark:border-[#2F3136] transition-colors"
         >
           <UserAvatar
             :name="authStore.currentUser?.name"
@@ -217,7 +226,7 @@
 <script setup>
 import { ref } from 'vue';
 import { 
-  Search, X, Plus, Mail, Bell, Sun, Moon, ChevronDown, Clock, Settings, UserPlus, LogOut, UserCheck as UserEdit 
+  Menu, Search, X, Plus, Mail, Bell, Sun, Moon, ChevronDown, Clock, Settings, UserPlus, LogOut, UserCheck as UserEdit 
 } from 'lucide-vue-next';
 import UserAvatar from '@/components/common/UserAvatar.vue';
 import EditProfileModal from '@/components/settings/EditProfileModal.vue';
