@@ -68,7 +68,7 @@ router.post('/', async (req, res) => {
     if (!name) return res.status(400).json({ error: 'Space name is required' });
 
     const space = await Space.create({
-      name,
+      name: name.trim(),
       color,
       icon,
       description,
@@ -93,39 +93,21 @@ router.post('/', async (req, res) => {
   }
 });
 
-// Create folder inside space
-router.post('/:spaceId/folders', async (req, res) => {
+// Update / Rename space
+router.put('/:id', async (req, res) => {
   try {
-    const { name } = req.body;
-    if (!name) return res.status(400).json({ error: 'Folder name is required' });
+    const { name, color, description, icon } = req.body;
+    const updates = {};
+    if (name) updates.name = name.trim();
+    if (color) updates.color = color;
+    if (description !== undefined) updates.description = description;
+    if (icon) updates.icon = icon;
 
-    const space = await Space.findById(req.params.spaceId);
-    if (!space) return res.status(404).json({ error: 'Space not found' });
+    const updated = await Space.findByIdAndUpdate(req.params.id, updates, { new: true })
+      .populate('createdBy', 'name email avatar role');
 
-    space.folders.push({ name });
-    await space.save();
-
-    const createdFolder = space.folders[space.folders.length - 1];
-    res.status(201).json(createdFolder);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Create list inside space or folder
-router.post('/:spaceId/lists', async (req, res) => {
-  try {
-    const { name, folder_id = null, color = '#8b5cf6' } = req.body;
-    if (!name) return res.status(400).json({ error: 'List name is required' });
-
-    const list = await List.create({
-      spaceId: req.params.spaceId,
-      folderId: folder_id || null,
-      name,
-      color
-    });
-
-    res.status(201).json({ ...list.toObject(), task_count: 0 });
+    if (!updated) return res.status(404).json({ error: 'Space not found' });
+    res.json(updated);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -137,7 +119,53 @@ router.delete('/:id', async (req, res) => {
     await Space.findByIdAndDelete(req.params.id);
     await List.deleteMany({ spaceId: req.params.id });
     await Task.deleteMany({ spaceId: req.params.id });
-    res.json({ success: true, message: 'Space deleted' });
+    res.json({ success: true, message: 'Space and its tasks deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Create list inside space
+router.post('/:spaceId/lists', async (req, res) => {
+  try {
+    const { name, folder_id = null, color = '#8b5cf6' } = req.body;
+    if (!name) return res.status(400).json({ error: 'List name is required' });
+
+    const list = await List.create({
+      spaceId: req.params.spaceId,
+      folderId: folder_id || null,
+      name: name.trim(),
+      color
+    });
+
+    res.status(201).json({ ...list.toObject(), task_count: 0 });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update / Rename list
+router.put('/lists/:listId', async (req, res) => {
+  try {
+    const { name, color } = req.body;
+    const updates = {};
+    if (name) updates.name = name.trim();
+    if (color) updates.color = color;
+
+    const updated = await List.findByIdAndUpdate(req.params.listId, updates, { new: true });
+    if (!updated) return res.status(404).json({ error: 'List not found' });
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Delete list
+router.delete('/lists/:listId', async (req, res) => {
+  try {
+    await List.findByIdAndDelete(req.params.listId);
+    await Task.deleteMany({ listId: req.params.listId });
+    res.json({ success: true, message: 'List and its tasks deleted successfully' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

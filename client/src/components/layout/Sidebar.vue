@@ -85,7 +85,7 @@
               v-if="authStore.isSuperAdmin || authStore.isManager"
               @click="openCreateSpaceModal"
               class="text-slate-400 hover:text-purple-400 p-1 rounded-lg hover:bg-slate-800/60 transition-colors"
-              title="Create Space"
+              title="Create New Space"
             >
               <Plus class="w-4 h-4" />
             </button>
@@ -138,13 +138,31 @@
                   <span v-if="!taskStore.sidebarCollapsed" class="truncate">{{ space.name }}</span>
                 </div>
 
-                <div v-if="!taskStore.sidebarCollapsed && (authStore.isSuperAdmin || authStore.isManager)" class="flex items-center space-x-1 shrink-0">
+                <!-- Space Action Buttons (Super Admin / Manager Only) -->
+                <div v-if="!taskStore.sidebarCollapsed && (authStore.isSuperAdmin || authStore.isManager)" class="flex items-center space-x-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <!-- Add List -->
                   <button
                     @click.stop="openCreateListModal(space._id || space.id, space.name)"
-                    class="opacity-0 group-hover:opacity-100 hover:text-purple-400 p-1 rounded hover:bg-slate-700/50"
+                    class="hover:text-purple-400 p-1 rounded hover:bg-slate-700/50"
                     title="Add List"
                   >
                     <Plus class="w-3.5 h-3.5" />
+                  </button>
+                  <!-- Edit / Rename Space -->
+                  <button
+                    @click.stop="openEditSpaceModal(space)"
+                    class="hover:text-purple-400 p-1 rounded hover:bg-slate-700/50"
+                    title="Rename / Edit Space"
+                  >
+                    <Edit3 class="w-3.5 h-3.5" />
+                  </button>
+                  <!-- Delete Space -->
+                  <button
+                    @click.stop="handleDeleteSpace(space)"
+                    class="hover:text-red-400 p-1 rounded hover:bg-slate-700/50"
+                    title="Delete Space"
+                  >
+                    <Trash2 class="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
@@ -154,12 +172,12 @@
                 v-if="!taskStore.sidebarCollapsed && space.lists && space.lists.length > 0"
                 class="pl-5 pr-1 py-1 space-y-1"
               >
-                <button
+                <div
                   v-for="list in space.lists"
                   :key="list._id || list.id"
                   @click="selectList(space._id || space.id, list._id || list.id)"
                   :class="[
-                    'w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-colors',
+                    'w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-colors cursor-pointer group/list',
                     taskStore.selectedListId === (list._id || list.id)
                       ? 'bg-purple-900/50 text-purple-300 font-bold border-l-2 border-purple-400 pl-2'
                       : 'text-slate-400 hover:bg-slate-800/40 hover:text-slate-200'
@@ -169,10 +187,30 @@
                     <List class="w-3 h-3 text-slate-500" />
                     <span class="truncate">{{ list.name }}</span>
                   </div>
-                  <span v-if="list.task_count > 0" class="text-[9px] bg-slate-800 text-slate-400 px-1.5 py-0.2 rounded-full font-bold">
-                    {{ list.task_count }}
-                  </span>
-                </button>
+
+                  <div class="flex items-center space-x-1 shrink-0">
+                    <span v-if="list.task_count > 0" class="text-[9px] bg-slate-800 text-slate-400 px-1.5 py-0.2 rounded-full font-bold">
+                      {{ list.task_count }}
+                    </span>
+                    <!-- List Edit / Delete (Super Admin / Manager Only) -->
+                    <div v-if="authStore.isSuperAdmin || authStore.isManager" class="flex items-center space-x-0.5 opacity-0 group-hover/list:opacity-100 transition-opacity">
+                      <button
+                        @click.stop="openEditListModal(space._id || space.id, list)"
+                        class="p-0.5 hover:text-purple-400 rounded hover:bg-slate-700/50"
+                        title="Rename List"
+                      >
+                        <Edit3 class="w-3 h-3" />
+                      </button>
+                      <button
+                        @click.stop="handleDeleteList(list)"
+                        class="p-0.5 hover:text-red-400 rounded hover:bg-slate-700/50"
+                        title="Delete List"
+                      >
+                        <Trash2 class="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -271,19 +309,19 @@
         </button>
       </div>
 
-      <!-- CUSTOM CREATE SPACE MODAL -->
+      <!-- CREATE / EDIT SPACE MODAL -->
       <div
-        v-if="createSpaceModalOpen"
+        v-if="createSpaceModalOpen || editSpaceModalOpen"
         class="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in"
-        @click.self="createSpaceModalOpen = false"
+        @click.self="closeSpaceModals"
       >
         <div class="bg-white dark:bg-[#202225] rounded-2xl shadow-2xl border border-slate-200 dark:border-[#2F3136] w-full max-w-sm p-5 space-y-4 text-slate-900 dark:text-white">
           <div class="flex items-center justify-between">
             <h3 class="text-sm font-extrabold flex items-center space-x-2">
-              <span class="w-3 h-3 rounded-full bg-purple-500"></span>
-              <span>Create New Space</span>
+              <span class="w-3 h-3 rounded-full" :style="{ backgroundColor: selectedSpaceColor }"></span>
+              <span>{{ editSpaceModalOpen ? 'Rename / Edit Space' : 'Create New Space' }}</span>
             </h3>
-            <button @click="createSpaceModalOpen = false" class="text-slate-400 hover:text-slate-600">
+            <button @click="closeSpaceModals" class="text-slate-400 hover:text-slate-600">
               <X class="w-4 h-4" />
             </button>
           </div>
@@ -294,9 +332,9 @@
               v-model="newSpaceName"
               type="text"
               required
-              placeholder="e.g. Marketing, Engineering..."
+              placeholder="e.g. Marketing, Engineering, Operations..."
               class="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-purple-500"
-              @keyup.enter="handleCreateSpace"
+              @keyup.enter="handleSaveSpace"
             />
           </div>
 
@@ -317,35 +355,35 @@
 
           <div class="flex items-center justify-end space-x-2 pt-2">
             <button
-              @click="createSpaceModalOpen = false"
+              @click="closeSpaceModals"
               class="px-3 py-1.5 text-xs text-slate-500 hover:text-slate-700 font-semibold"
             >
               Cancel
             </button>
             <button
-              @click="handleCreateSpace"
+              @click="handleSaveSpace"
               :disabled="!newSpaceName.trim()"
               class="px-4 py-1.5 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-sm transition-all"
             >
-              Create Space
+              {{ editSpaceModalOpen ? 'Save Changes' : 'Create Space' }}
             </button>
           </div>
         </div>
       </div>
 
-      <!-- CUSTOM CREATE LIST MODAL -->
+      <!-- CREATE / EDIT LIST MODAL -->
       <div
-        v-if="createListModalOpen"
+        v-if="createListModalOpen || editListModalOpen"
         class="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in"
-        @click.self="createListModalOpen = false"
+        @click.self="closeListModals"
       >
         <div class="bg-white dark:bg-[#202225] rounded-2xl shadow-2xl border border-slate-200 dark:border-[#2F3136] w-full max-w-sm p-5 space-y-4 text-slate-900 dark:text-white">
           <div class="flex items-center justify-between">
             <h3 class="text-sm font-extrabold flex items-center space-x-2">
               <List class="w-4 h-4 text-purple-500" />
-              <span>Add List in {{ targetSpaceName }}</span>
+              <span>{{ editListModalOpen ? 'Rename List' : `Add List in ${targetSpaceName}` }}</span>
             </h3>
-            <button @click="createListModalOpen = false" class="text-slate-400 hover:text-slate-600">
+            <button @click="closeListModals" class="text-slate-400 hover:text-slate-600">
               <X class="w-4 h-4" />
             </button>
           </div>
@@ -356,25 +394,25 @@
               v-model="newListName"
               type="text"
               required
-              placeholder="e.g. Sprint 1, Backlog, Ideas..."
+              placeholder="e.g. Sprint 1, Backlog, Ideas, General Tasks..."
               class="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-[#18191B] border border-slate-200 dark:border-[#2F3136] rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-purple-500"
-              @keyup.enter="handleCreateList"
+              @keyup.enter="handleSaveList"
             />
           </div>
 
           <div class="flex items-center justify-end space-x-2 pt-2">
             <button
-              @click="createListModalOpen = false"
+              @click="closeListModals"
               class="px-3 py-1.5 text-xs text-slate-500 hover:text-slate-700 font-semibold"
             >
               Cancel
             </button>
             <button
-              @click="handleCreateList"
+              @click="handleSaveList"
               :disabled="!newListName.trim()"
               class="px-4 py-1.5 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-sm transition-all"
             >
-              Add List
+              {{ editListModalOpen ? 'Save Changes' : 'Add List' }}
             </button>
           </div>
         </div>
@@ -393,7 +431,7 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { 
-  Layers, LayoutGrid, List, Kanban, Calendar, GanttChartSquare, BarChart3, Plus, Users, X, ChevronLeft, ChevronRight, Edit3, Share2 
+  Layers, LayoutGrid, List, Kanban, Calendar, GanttChartSquare, BarChart3, Plus, Users, X, ChevronLeft, ChevronRight, Edit3, Trash2, Share2 
 } from 'lucide-vue-next';
 import UserAvatar from '@/components/common/UserAvatar.vue';
 import EditProfileModal from '@/components/settings/EditProfileModal.vue';
@@ -414,7 +452,6 @@ const viewOptions = computed(() => {
     { id: 'dashboard', label: 'Dashboard & Metrics', icon: BarChart3 }
   ];
 
-  // SMM Part only shows for Super Admin, Manager, or SMM/Marketing employee
   if (authStore.isSmmMember) {
     options.push({ id: 'smm', label: 'SMM & Campaign Sheets', icon: Share2 });
   }
@@ -422,12 +459,17 @@ const viewOptions = computed(() => {
   return options;
 });
 
-// Custom Modals State
+// Space Modals State
 const createSpaceModalOpen = ref(false);
+const editSpaceModalOpen = ref(false);
+const editingSpaceId = ref(null);
 const newSpaceName = ref('');
 const selectedSpaceColor = ref('#7B68EE');
 
+// List Modals State
 const createListModalOpen = ref(false);
+const editListModalOpen = ref(false);
+const editingListId = ref(null);
 const targetSpaceId = ref(null);
 const targetSpaceName = ref('');
 const newListName = ref('');
@@ -464,43 +506,126 @@ function filterByAssignee(userId) {
 }
 
 function openCreateSpaceModal() {
+  editingSpaceId.value = null;
   newSpaceName.value = '';
   selectedSpaceColor.value = '#7B68EE';
+  editSpaceModalOpen.value = false;
   createSpaceModalOpen.value = true;
 }
 
-async function handleCreateSpace() {
+function openEditSpaceModal(space) {
+  editingSpaceId.value = space._id || space.id;
+  newSpaceName.value = space.name || '';
+  selectedSpaceColor.value = space.color || '#7B68EE';
+  createSpaceModalOpen.value = false;
+  editSpaceModalOpen.value = true;
+}
+
+function closeSpaceModals() {
+  createSpaceModalOpen.value = false;
+  editSpaceModalOpen.value = false;
+  editingSpaceId.value = null;
+  newSpaceName.value = '';
+}
+
+async function handleSaveSpace() {
   if (!newSpaceName.value.trim()) return;
   try {
-    await taskStore.createSpace({
-      name: newSpaceName.value.trim(),
-      color: selectedSpaceColor.value,
-      created_by: authStore.currentUser?._id || authStore.currentUser?.id
-    });
-    uiStore.success(`Space "${newSpaceName.value.trim()}" created`);
-    createSpaceModalOpen.value = false;
-    newSpaceName.value = '';
+    if (editSpaceModalOpen.value && editingSpaceId.value) {
+      await taskStore.updateSpace(editingSpaceId.value, {
+        name: newSpaceName.value.trim(),
+        color: selectedSpaceColor.value
+      });
+      uiStore.success(`Space renamed to "${newSpaceName.value.trim()}"`);
+    } else {
+      await taskStore.createSpace({
+        name: newSpaceName.value.trim(),
+        color: selectedSpaceColor.value,
+        created_by: authStore.currentUser?._id || authStore.currentUser?.id
+      });
+      uiStore.success(`Space "${newSpaceName.value.trim()}" created`);
+    }
+    closeSpaceModals();
   } catch (err) {
-    uiStore.error('Error creating space: ' + err.message);
+    uiStore.error('Error saving space: ' + err.message);
+  }
+}
+
+async function handleDeleteSpace(space) {
+  const confirmed = await uiStore.confirm({
+    title: 'Delete Space',
+    message: `Are you sure you want to permanently delete space "${space.name}" and all its lists & tasks?`,
+    confirmText: 'Delete Space',
+    isDanger: true
+  });
+
+  if (confirmed) {
+    try {
+      await taskStore.deleteSpace(space._id || space.id);
+      uiStore.success(`Space "${space.name}" deleted`);
+    } catch (err) {
+      uiStore.error('Failed to delete space: ' + err.message);
+    }
   }
 }
 
 function openCreateListModal(spaceId, spaceName) {
   targetSpaceId.value = spaceId;
   targetSpaceName.value = spaceName || 'Space';
+  editingListId.value = null;
   newListName.value = '';
+  editListModalOpen.value = false;
   createListModalOpen.value = true;
 }
 
-async function handleCreateList() {
-  if (!newListName.value.trim() || !targetSpaceId.value) return;
+function openEditListModal(spaceId, list) {
+  targetSpaceId.value = spaceId;
+  editingListId.value = list._id || list.id;
+  newListName.value = list.name || '';
+  createListModalOpen.value = false;
+  editListModalOpen.value = true;
+}
+
+function closeListModals() {
+  createListModalOpen.value = false;
+  editListModalOpen.value = false;
+  editingListId.value = null;
+  newListName.value = '';
+}
+
+async function handleSaveList() {
+  if (!newListName.value.trim()) return;
   try {
-    await taskStore.createList(targetSpaceId.value, { name: newListName.value.trim() });
-    uiStore.success(`List "${newListName.value.trim()}" added to ${targetSpaceName.value}`);
-    createListModalOpen.value = false;
-    newListName.value = '';
+    if (editListModalOpen.value && editingListId.value) {
+      await taskStore.updateList(editingListId.value, {
+        name: newListName.value.trim()
+      });
+      uiStore.success(`List renamed to "${newListName.value.trim()}"`);
+    } else if (targetSpaceId.value) {
+      await taskStore.createList(targetSpaceId.value, { name: newListName.value.trim() });
+      uiStore.success(`List "${newListName.value.trim()}" added to ${targetSpaceName.value}`);
+    }
+    closeListModals();
   } catch (err) {
-    uiStore.error('Error creating list: ' + err.message);
+    uiStore.error('Error saving list: ' + err.message);
+  }
+}
+
+async function handleDeleteList(list) {
+  const confirmed = await uiStore.confirm({
+    title: 'Delete List',
+    message: `Are you sure you want to delete list "${list.name}" and all its tasks?`,
+    confirmText: 'Delete List',
+    isDanger: true
+  });
+
+  if (confirmed) {
+    try {
+      await taskStore.deleteList(list._id || list.id);
+      uiStore.success(`List "${list.name}" deleted`);
+    } catch (err) {
+      uiStore.error('Failed to delete list: ' + err.message);
+    }
   }
 }
 

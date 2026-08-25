@@ -9,7 +9,7 @@ export const useTaskStore = defineStore('tasks', {
     selectedSpaceId: null,
     selectedListId: null,
     selectedTask: null,
-    activeView: 'list', // 'list' | 'board' | 'calendar' | 'gantt' | 'dashboard'
+    activeView: 'list', // 'list' | 'board' | 'calendar' | 'gantt' | 'dashboard' | 'smm'
     
     // Filters & Search
     searchQuery: '',
@@ -279,6 +279,30 @@ export const useTaskStore = defineStore('tasks', {
       }
     },
 
+    async updateSpace(spaceId, updates) {
+      try {
+        const res = await axios.put(`/api/spaces/${spaceId}`, updates);
+        await this.fetchSpaces();
+        return res.data;
+      } catch (err) {
+        throw new Error(err.response?.data?.error || err.message);
+      }
+    },
+
+    async deleteSpace(spaceId) {
+      try {
+        await axios.delete(`/api/spaces/${spaceId}`);
+        if (this.selectedSpaceId === spaceId) {
+          this.selectedSpaceId = null;
+          this.selectedListId = null;
+        }
+        await this.fetchSpaces();
+        await this.fetchTasks();
+      } catch (err) {
+        throw new Error(err.response?.data?.error || err.message);
+      }
+    },
+
     async createList(spaceId, listData) {
       try {
         const res = await axios.post(`/api/spaces/${spaceId}/lists`, listData);
@@ -286,6 +310,29 @@ export const useTaskStore = defineStore('tasks', {
         this.selectedListId = res.data._id || res.data.id;
         await this.fetchTasks();
         return res.data;
+      } catch (err) {
+        throw new Error(err.response?.data?.error || err.message);
+      }
+    },
+
+    async updateList(listId, updates) {
+      try {
+        const res = await axios.put(`/api/spaces/lists/${listId}`, updates);
+        await this.fetchSpaces();
+        return res.data;
+      } catch (err) {
+        throw new Error(err.response?.data?.error || err.message);
+      }
+    },
+
+    async deleteList(listId) {
+      try {
+        await axios.delete(`/api/spaces/lists/${listId}`);
+        if (this.selectedListId === listId) {
+          this.selectedListId = null;
+        }
+        await this.fetchSpaces();
+        await this.fetchTasks();
       } catch (err) {
         throw new Error(err.response?.data?.error || err.message);
       }
