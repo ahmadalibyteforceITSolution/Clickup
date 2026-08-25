@@ -26,43 +26,61 @@ app.use(cors({
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Database connection middleware for Serverless execution
-app.use(async (req, res, next) => {
-  if (req.method === 'OPTIONS' || req.url.includes('/health')) return next();
-  try {
-    await connectDB();
-    next();
-  } catch (err) {
-    console.error('Serverless DB Connection Error:', err);
-    return res.status(500).json({ error: 'MongoDB connection failed: ' + err.message });
-  }
-});
+// Health check endpoint (Always returns 200)
+app.get('/api/health', (req, res) => res.status(200).json({ status: 'ok', time: new Date().toISOString() }));
+app.get('/health', (req, res) => res.status(200).json({ status: 'ok', time: new Date().toISOString() }));
 
-// Mount routes on BOTH /api/... and /... to prevent Vercel rewrite prefix issues
-const routes = [
-  ['auth', authRouter],
-  ['users', usersRouter],
-  ['spaces', spacesRouter],
-  ['tasks', tasksRouter],
-  ['comments', commentsRouter],
-  ['subtasks', subtasksRouter],
-  ['attachments', attachmentsRouter],
-  ['analytics', analyticsRouter],
-  ['emails', emailsRouter]
-];
+// Mount routes on BOTH /api/... and /... to match all Vercel path rewrites
+app.use('/api/auth', authRouter);
+app.use('/auth', authRouter);
 
-for (const [prefix, router] of routes) {
-  app.use(`/api/${prefix}`, router);
-  app.use(`/${prefix}`, router);
-}
+app.use('/api/users', usersRouter);
+app.use('/users', usersRouter);
 
-app.get('/api/health', (req, res) => res.json({ status: 'ok', time: new Date().toISOString() }));
-app.get('/health', (req, res) => res.json({ status: 'ok', time: new Date().toISOString() }));
+app.use('/api/spaces', spacesRouter);
+app.use('/spaces', spacesRouter);
 
-// Global error handler with clean JSON output
+app.use('/api/tasks', tasksRouter);
+app.use('/tasks', tasksRouter);
+
+app.use('/api/comments', commentsRouter);
+app.use('/comments', commentsRouter);
+
+app.use('/api/subtasks', subtasksRouter);
+app.use('/subtasks', subtasksRouter);
+
+app.use('/api/attachments', attachmentsRouter);
+app.use('/attachments', attachmentsRouter);
+
+app.use('/api/analytics', analyticsRouter);
+app.use('/analytics', analyticsRouter);
+
+app.use('/api/emails', emailsRouter);
+app.use('/emails', emailsRouter);
+
+// Global error handler
 app.use((err, req, res, next) => {
-  console.error('API Error:', err);
+  console.error('Serverless Error:', err);
   res.status(500).json({ error: err.message || 'Internal Server Error' });
 });
 
-export default app;
+// Vercel Serverless Function Handler
+export default async function handler(req, res) {
+  try {
+    if (req.method === 'OPTIONS') {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
+      return res.status(200).end();
+    }
+
+    if (!req.url.includes('/health')) {
+      await connectDB();
+    }
+
+    return app(req, res);
+  } catch (err) {
+    console.error('Vercel Handler Top-Level Error:', err);
+    return res.status(500).json({ error: 'Database/Serverless Handler error: ' + err.message });
+  }
+}

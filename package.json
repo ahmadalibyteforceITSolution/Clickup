@@ -1,6 +1,7 @@
 {
   "name": "clickup-clone-app",
   "version": "1.0.0",
+  "type": "module",
   "private": true,
   "description": "Full-Featured ClickUp Clone in Vue.js and MongoDB with Email Engine",
   "scripts": {
