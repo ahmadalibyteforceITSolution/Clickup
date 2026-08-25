@@ -2,10 +2,43 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --theme-primary: #7c3aed;
+  --theme-secondary: #4f46e5;
+  --theme-light: rgba(124, 58, 237, 0.15);
+  --theme-border: rgba(124, 58, 237, 0.3);
+  --theme-gradient: linear-gradient(135deg, var(--theme-primary), var(--theme-secondary));
+}
+
 @layer base {
   body {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
   }
+}
+
+/* Dynamic Workspace Theme Helper Classes */
+.theme-bg {
+  background-color: var(--theme-primary) !important;
+}
+
+.theme-gradient-bg {
+  background: var(--theme-gradient) !important;
+}
+
+.theme-text {
+  color: var(--theme-primary) !important;
+}
+
+.theme-border {
+  border-color: var(--theme-primary) !important;
+}
+
+.theme-light-bg {
+  background-color: var(--theme-light) !important;
+}
+
+.theme-shadow {
+  box-shadow: 0 10px 25px -5px var(--theme-light) !important;
 }
 
 /* Custom ClickUp Scrollbars */

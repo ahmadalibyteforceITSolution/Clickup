@@ -4,6 +4,8 @@ export const useUiStore = defineStore('ui', {
   state: () => ({
     activeRequests: 0,
     toasts: [],
+    themeColor: localStorage.getItem('clickup_theme_color') || '#7C3AED',
+    isDarkMode: localStorage.getItem('clickup_theme_mode') === 'dark' || document.documentElement.classList.contains('dark'),
     confirmModal: {
       isOpen: false,
       title: 'Confirm Action',
@@ -28,6 +30,50 @@ export const useUiStore = defineStore('ui', {
       if (this.activeRequests > 0) {
         this.activeRequests--;
       }
+    },
+
+    // Apply workspace accent theme color across the entire application
+    setThemeColor(hex) {
+      if (!hex) return;
+      this.themeColor = hex;
+      localStorage.setItem('clickup_theme_color', hex);
+
+      // Generate complementary secondary & light tint
+      const primary = hex;
+      const light = hex + '26'; // 15% opacity hex
+      const border = hex + '4D'; // 30% opacity hex
+      
+      const root = document.documentElement;
+      root.style.setProperty('--theme-primary', primary);
+      root.style.setProperty('--theme-secondary', primary);
+      root.style.setProperty('--theme-light', light);
+      root.style.setProperty('--theme-border', border);
+      root.style.setProperty('--theme-gradient', `linear-gradient(135deg, ${primary}, ${primary}dd)`);
+    },
+
+    toggleDarkMode() {
+      this.isDarkMode = !this.isDarkMode;
+      if (this.isDarkMode) {
+        document.documentElement.classList.add('dark');
+        localStorage.setItem('clickup_theme_mode', 'dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+        localStorage.setItem('clickup_theme_mode', 'light');
+      }
+      // Re-apply theme color so it shines in both modes
+      this.setThemeColor(this.themeColor);
+    },
+
+    initTheme() {
+      const savedMode = localStorage.getItem('clickup_theme_mode');
+      if (savedMode === 'dark' || (!savedMode && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+        this.isDarkMode = true;
+      } else {
+        document.documentElement.classList.remove('dark');
+        this.isDarkMode = false;
+      }
+      this.setThemeColor(this.themeColor);
     },
 
     showToast({ type = 'info', title = '', message = '', duration = 4000 }) {

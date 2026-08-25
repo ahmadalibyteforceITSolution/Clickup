@@ -52,7 +52,7 @@
       <button
         v-if="authStore.isSuperAdmin || authStore.isManager"
         @click="taskStore.createTaskModalOpen = true"
-        class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-medium text-xs md:text-sm px-2.5 sm:px-3.5 py-1.5 rounded-lg flex items-center space-x-1 shadow-sm shadow-purple-500/20 transition-all active:scale-95"
+        class="theme-gradient-bg text-white font-medium text-xs md:text-sm px-2.5 sm:px-3.5 py-1.5 rounded-lg flex items-center space-x-1 shadow-sm transition-all active:scale-95 hover:opacity-90"
       >
         <Plus class="w-4 h-4" />
         <span class="hidden sm:inline font-semibold">New Task</span>
@@ -64,9 +64,9 @@
         title="View ClickUp Email Outbox & Dispatch History"
         class="relative p-1.5 sm:p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#292B2F] border border-slate-200 dark:border-[#2F3136] transition-colors flex items-center space-x-1"
       >
-        <Mail class="w-4 h-4 text-purple-600 dark:text-purple-400" />
+        <Mail class="w-4 h-4 theme-text" />
         <span class="text-xs font-semibold hidden md:inline">Emails</span>
-        <span class="w-2 h-2 rounded-full bg-purple-500 animate-pulse"></span>
+        <span class="w-2 h-2 rounded-full theme-bg animate-pulse"></span>
       </button>
 
       <!-- In-App Notification Bell with Dropdown -->
@@ -92,14 +92,14 @@
           <div class="px-4 py-2 border-b border-slate-100 dark:border-[#2F3136] flex items-center justify-between">
             <h4 class="font-bold text-sm text-slate-800 dark:text-white flex items-center space-x-2">
               <span>Notifications</span>
-              <span class="bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 text-xs px-2 py-0.5 rounded-full font-bold">
+              <span class="theme-light-bg theme-text text-xs px-2 py-0.5 rounded-full font-bold">
                 {{ notifStore.unreadCount }} new
               </span>
             </h4>
             <button
               v-if="notifStore.unreadCount > 0"
               @click="markAllAsRead"
-              class="text-xs text-purple-600 dark:text-purple-400 hover:underline font-medium"
+              class="text-xs theme-text hover:underline font-medium"
             >
               Mark all read
             </button>
@@ -111,7 +111,7 @@
               :key="n.id"
               @click="handleNotificationClick(n)"
               class="p-3.5 hover:bg-slate-50 dark:hover:bg-[#292B2F] cursor-pointer transition-colors"
-              :class="{ 'bg-purple-50/40 dark:bg-purple-950/20': !n.is_read }"
+              :class="{ 'theme-light-bg': !n.is_read }"
             >
               <div class="flex items-start justify-between">
                 <p class="text-xs font-bold text-slate-800 dark:text-slate-200">{{ n.title }}</p>
@@ -122,6 +122,38 @@
             <div v-if="notifStore.notifications.length === 0" class="py-8 text-center text-xs text-slate-400">
               No new notifications
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Workspace Theme Color Palette Dropdown -->
+      <div class="relative">
+        <button
+          @click="colorPaletteOpen = !colorPaletteOpen"
+          class="p-1.5 sm:p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#292B2F] transition-colors flex items-center space-x-1"
+          title="Change Workspace Accent Color"
+        >
+          <Palette class="w-4 h-4 theme-text" />
+          <span class="w-2.5 h-2.5 rounded-full theme-bg ring-1 ring-white dark:ring-slate-800"></span>
+        </button>
+
+        <!-- Color Palette Dropdown Card -->
+        <div
+          v-if="colorPaletteOpen"
+          class="absolute right-0 mt-2 w-48 bg-white dark:bg-[#202225] rounded-2xl shadow-2xl border border-slate-200 dark:border-[#2F3136] p-3 z-50 animate-fade-in space-y-2"
+        >
+          <p class="text-[11px] font-extrabold uppercase text-slate-500 tracking-wider">Workspace Color</p>
+          <div class="grid grid-cols-4 gap-2">
+            <button
+              v-for="color in themePalette"
+              :key="color.hex"
+              @click="applyThemeColor(color.hex)"
+              :title="color.name"
+              class="w-8 h-8 rounded-xl flex items-center justify-center transition-transform hover:scale-110 shadow-xs"
+              :style="{ backgroundColor: color.hex }"
+            >
+              <Check v-if="uiStore.themeColor.toLowerCase() === color.hex.toLowerCase()" class="w-4 h-4 text-white" />
+            </button>
           </div>
         </div>
       </div>
@@ -140,20 +172,20 @@
       <div class="relative ml-1">
         <button
           @click="userMenuOpen = !userMenuOpen"
-          class="flex items-center space-x-1.5 sm:space-x-2 p-1 sm:p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-[#292B2F] border border-slate-200 dark:border-[#2F3136] transition-colors"
+          class="flex items-center space-x-2 p-1 rounded-full hover:bg-slate-100 dark:hover:bg-[#292B2F] transition-colors"
         >
           <UserAvatar
-            :name="authStore.currentUser?.name"
+            :name="authStore.currentUser?.name || 'User'"
             :avatar="authStore.currentUser?.avatar"
             size="sm"
           />
-          <div class="text-left hidden lg:block pr-1">
-            <p class="text-xs font-bold text-slate-800 dark:text-slate-200 leading-tight">
-              {{ authStore.currentUser?.name || 'Sign In' }}
-            </p>
-            <p class="text-[10px] font-semibold uppercase tracking-wider text-purple-600 dark:text-purple-400">
-              {{ authStore.roleLabel || 'Guest' }}
-            </p>
+          <div class="hidden lg:flex flex-col text-left">
+            <span class="text-xs font-bold text-slate-900 dark:text-white leading-tight">
+              {{ authStore.currentUser?.name || 'Guest' }}
+            </span>
+            <span class="text-[10px] theme-text uppercase font-extrabold tracking-wider">
+              {{ authStore.roleLabel }}
+            </span>
           </div>
           <ChevronDown class="w-3.5 h-3.5 text-slate-400" />
         </button>
@@ -161,56 +193,47 @@
         <!-- User Dropdown Menu -->
         <div
           v-if="userMenuOpen"
-          class="absolute right-0 mt-2 w-72 bg-white dark:bg-[#202225] rounded-2xl shadow-2xl border border-slate-200 dark:border-[#2F3136] py-2 z-50 animate-fade-in"
+          class="absolute right-0 mt-2 w-60 bg-white dark:bg-[#202225] rounded-2xl shadow-2xl border border-slate-200 dark:border-[#2F3136] py-2 z-50 animate-fade-in divide-y divide-slate-100 dark:divide-[#2F3136]"
         >
-          <div class="px-4 py-3 border-b border-slate-100 dark:border-[#2F3136] flex items-center space-x-3">
-            <UserAvatar
-              :name="authStore.currentUser?.name"
-              :avatar="authStore.currentUser?.avatar"
-              size="md"
-            />
-            <div class="min-w-0 flex-1">
-              <p class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">{{ authStore.currentUser?.name || 'Guest User' }}</p>
-              <p class="text-[10px] text-slate-400 truncate">{{ authStore.currentUser?.email }}</p>
+          <div class="px-4 py-2.5">
+            <p class="text-xs font-bold text-slate-900 dark:text-white">{{ authStore.currentUser?.name }}</p>
+            <p class="text-[11px] text-slate-500 truncate">{{ authStore.currentUser?.email }}</p>
+            <div class="mt-1 flex items-center space-x-1.5">
+              <span class="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase theme-light-bg theme-text">
+                {{ authStore.roleLabel }}
+              </span>
+              <span class="text-[10px] text-slate-400">• {{ authStore.currentUser?.department || 'General' }}</span>
             </div>
           </div>
 
-          <div class="p-2 space-y-1">
-            <!-- Edit Profile & Photo Button -->
+          <div class="py-1">
+            <!-- Edit Profile & Change Password -->
             <button
-              @click="editProfileOpen = true; userMenuOpen = false"
-              class="w-full text-left px-3 py-2 text-xs font-bold text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/30 rounded-xl flex items-center space-x-2 transition-colors"
+              @click="openProfileModal"
+              class="w-full px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-[#292B2F] flex items-center space-x-2"
             >
-              <UserEdit class="w-4 h-4" />
-              <span>Edit Profile & Upload Photo</span>
+              <UserIcon class="w-4 h-4 theme-text" />
+              <span>Edit Profile & Password</span>
             </button>
 
-            <!-- Register / Switch Account -->
+            <!-- Workspace Settings (Super Admin Only) -->
             <button
-              @click="authStore.authModalOpen = true; authStore.authMode = 'register'; userMenuOpen = false"
-              class="w-full text-left px-3 py-2 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#292B2F] rounded-xl flex items-center space-x-2 transition-colors"
+              v-if="authStore.isSuperAdmin"
+              @click="openSettings"
+              class="w-full px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-[#292B2F] flex items-center space-x-2"
             >
-              <UserPlus class="w-4 h-4 text-slate-400" />
-              <span>Register New Account</span>
+              <SlidersHorizontal class="w-4 h-4 text-slate-500" />
+              <span>Workspace Administration</span>
             </button>
+          </div>
 
-            <!-- Settings & SMTP (Admin/Manager only) -->
+          <div class="py-1">
             <button
-              v-if="authStore.isSuperAdmin || authStore.isManager"
-              @click="taskStore.settingsModalOpen = true; userMenuOpen = false"
-              class="w-full text-left px-3 py-2 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#292B2F] rounded-xl flex items-center space-x-2 transition-colors"
-            >
-              <Settings class="w-4 h-4 text-slate-400" />
-              <span>Workspace Settings & SMTP</span>
-            </button>
-
-            <!-- Logout -->
-            <button
-              @click="authStore.logout(); userMenuOpen = false"
-              class="w-full text-left px-3 py-2 text-xs text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-xl flex items-center space-x-2 transition-colors"
+              @click="handleLogout"
+              class="w-full px-4 py-2 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 flex items-center space-x-2"
             >
               <LogOut class="w-4 h-4" />
-              <span>Sign Out</span>
+              <span>Log Out</span>
             </button>
           </div>
         </div>
@@ -219,40 +242,61 @@
 
     <!-- Edit Profile Modal -->
     <EditProfileModal
-      :isOpen="editProfileOpen"
-      @close="editProfileOpen = false"
+      :isOpen="profileModalOpen"
+      :targetUser="authStore.currentUser"
+      @close="profileModalOpen = false"
     />
   </header>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { 
-  Menu, Search, X, Plus, Mail, Bell, Sun, Moon, ChevronDown, Clock, Settings, UserPlus, LogOut, UserCheck as UserEdit 
+  Menu, Search, Plus, Bell, Moon, Sun, Mail, Clock, ChevronDown, User as UserIcon, SlidersHorizontal, LogOut, X, Palette, Check
 } from 'lucide-vue-next';
 import UserAvatar from '@/components/common/UserAvatar.vue';
 import EditProfileModal from '@/components/settings/EditProfileModal.vue';
-import { useAuthStore } from '@/stores/authStore';
 import { useTaskStore } from '@/stores/taskStore';
+import { useAuthStore } from '@/stores/authStore';
 import { useNotificationStore } from '@/stores/notificationStore';
+import { useUiStore } from '@/stores/uiStore';
 import { formatDistanceToNow } from 'date-fns';
 
-const authStore = useAuthStore();
 const taskStore = useTaskStore();
+const authStore = useAuthStore();
 const notifStore = useNotificationStore();
+const uiStore = useUiStore();
 
 const notificationsOpen = ref(false);
 const userMenuOpen = ref(false);
-const editProfileOpen = ref(false);
-const isDark = ref(false);
+const colorPaletteOpen = ref(false);
+const profileModalOpen = ref(false);
+
+const isDark = computed(() => uiStore.isDarkMode);
+
+const themePalette = [
+  { name: 'Purple', hex: '#7C3AED' },
+  { name: 'Royal Blue', hex: '#2563EB' },
+  { name: 'Emerald Green', hex: '#059669' },
+  { name: 'Rose Pink', hex: '#E11D48' },
+  { name: 'Amber Orange', hex: '#EA580C' },
+  { name: 'Ocean Teal', hex: '#0D9488' },
+  { name: 'Crimson Red', hex: '#DC2626' },
+  { name: 'Indigo', hex: '#4F46E5' }
+];
+
+onMounted(() => {
+  uiStore.initTheme();
+});
+
+function applyThemeColor(hex) {
+  uiStore.setThemeColor(hex);
+  colorPaletteOpen.value = false;
+  uiStore.success(`Workspace theme updated`);
+}
 
 function toggleTheme() {
-  isDark.value = !isDark.value;
-  if (isDark.value) {
-    document.documentElement.classList.add('dark');
-  } else {
-    document.documentElement.classList.remove('dark');
-  }
+  uiStore.toggleDarkMode();
 }
 
 function toggleOverdueFilter() {
@@ -261,27 +305,41 @@ function toggleOverdueFilter() {
 }
 
 function openEmailOutbox() {
-  notifStore.fetchEmailLogs();
   taskStore.emailOutboxModalOpen = true;
 }
 
-function markAllAsRead() {
+function openSettings() {
+  taskStore.settingsModalOpen = true;
+  userMenuOpen.value = false;
+}
+
+function openProfileModal() {
+  profileModalOpen.value = true;
+  userMenuOpen.value = false;
+}
+
+function handleLogout() {
+  authStore.logout();
+  userMenuOpen.value = false;
+}
+
+async function markAllAsRead() {
   if (authStore.currentUser) {
-    notifStore.markAllRead(authStore.currentUser._id || authStore.currentUser.id);
+    await notifStore.markAllAsRead(authStore.currentUser._id || authStore.currentUser.id);
   }
 }
 
 function handleNotificationClick(n) {
   if (n.task_id) {
     taskStore.openTaskModal(n.task_id);
-    notificationsOpen.value = false;
   }
+  notificationsOpen.value = false;
 }
 
-function formatRelativeTime(dateStr) {
-  if (!dateStr) return '';
+function formatRelativeTime(date) {
+  if (!date) return '';
   try {
-    return formatDistanceToNow(new Date(dateStr), { addSuffix: true });
+    return formatDistanceToNow(new Date(date), { addSuffix: true });
   } catch (e) {
     return '';
   }
